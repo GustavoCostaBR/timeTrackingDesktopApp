@@ -3,6 +3,7 @@ package allogica.trackingTimeDesktopApp.model.entity;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.*;
@@ -65,9 +66,14 @@ public class Activity {
 
 	@OneToMany(cascade = CascadeType.ALL) // Specify the cascade type
 	@JoinColumn(name = "parent_activity_id") // Specify the column linking subactivities to their parent
-	private Map<Integer, Activity> subactivities;
-	public void addSubactivity(int id, Activity subactivity) {
+	private Map<Long, Activity> subactivities;
+	public void addSubactivity(Long id, Activity subactivity) {
 		subactivities.put(id, subactivity);
+	}
+	public void setSubActivities(List<Activity> activities) {
+		for (Activity activity : activities) {
+			this.addSubactivity(activity.getId(), activity);
+		}
 	}
 	
 	
