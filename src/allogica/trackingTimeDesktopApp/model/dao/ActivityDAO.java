@@ -13,6 +13,7 @@ import org.hibernate.query.Query;
 
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.SubactivityEnd;
+import allogica.trackingTimeDesktopApp.model.entity.SubactivityStart;
 
 public class ActivityDAO extends GenericDAO<Activity> {
 
@@ -95,19 +96,18 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	}
 	public void changeAddStart(Long activityId, LocalDateTime start) {
 		Activity activity = super.findById(Activity.class, activityId);
-		activity.addStart(start);
+		SubactivityStart subactivityStart = new SubactivityStart(activity, start);
+		SubactivityStartDAO subactivityStartDAO = new SubactivityStartDAO(sessionFactory);
+	    subactivityStartDAO.saveGenericSubactivityTime(subactivityStart);
+		activity.addEnd(start);		
 		saveActivity(activity);
 	}
 	public void changeAddEnd(Long activityId, LocalDateTime end) {
 		Activity activity = super.findById(Activity.class, activityId);
 		SubactivityEnd subactivityEnd = new SubactivityEnd(activity, end);
 		SubactivityEndDAO subactivityEndDAO = new SubactivityEndDAO(sessionFactory);
-	    subactivityEndDAO.saveEnd(subactivityEnd);
-		
-		subactivityEnd.  .saveOrUpdate(subactivityEnd);
-		activity.addEnd(end);
-		
-		
+	    subactivityEndDAO.saveGenericSubactivityTime(subactivityEnd);
+		activity.addEnd(end);		
 		saveActivity(activity);
 	}
 	public void changeName(Long activityId, String name) {
