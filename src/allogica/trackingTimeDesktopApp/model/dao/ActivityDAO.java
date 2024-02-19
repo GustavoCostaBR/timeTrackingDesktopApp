@@ -24,9 +24,9 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	public Map<Long, Activity> getFirstLevelSubactivities(Long activityId) {
 		try (Session session = sessionFactory.openSession()) {
 			String hql = "SELECT a FROM Activity a WHERE a.parentActivityId = :parentId";
-            Query<Activity> query = session.createQuery(hql, Activity.class);
-            query.setParameter("parentId", activityId);
-            List<Activity> subactivities = query.getResultList();
+			Query<Activity> query = session.createQuery(hql, Activity.class);
+			query.setParameter("parentId", activityId);
+			List<Activity> subactivities = query.getResultList();
 			Map<Long, Activity> subactivitiesMap = new HashMap<>();
 			for (Activity subactivity : subactivities) {
 				subactivitiesMap.put(subactivity.getId(), subactivity);
@@ -63,46 +63,25 @@ public class ActivityDAO extends GenericDAO<Activity> {
 					Map<Long, Activity> firstLevelSubActivities = getFirstLevelSubactivities(activityId);
 					for (Map.Entry<Long, Activity> subactivity : firstLevelSubActivities.entrySet()) {
 						changeParentActivityId(subactivity.getKey(), 0L);
+					}
 				}
 			}
+			transaction.commit();
+		} catch (Exception e) {
+			if (transaction != null) {
+				transaction.rollback();
+			}
+			e.printStackTrace();
 		}
-		transaction.commit();
-	}catch(
-
-	Exception e)
-	{
-		if (transaction != null) {
-			transaction.rollback();
-		}
-		e.printStackTrace();
-	}
 	}
 
 	public void changeParentActivityId(Long activityId, Long newParentActivityId) {
-		super.findByPropertyAndUpdateOther(Activity.class, "parentActivityId", activityId, "parentActivityId", newParentActivityId);
-				
-//		Transaction transaction = null;
-//		try (Session session = sessionFactory.openSession()) {
-//			transaction = session.beginTransaction();
-//
-//			// Retrieve the Activity object by its ID
-//			Activity activity = session.get(Activity.class, activityId);
-//
-//			if (activity != null) {
-//				// Update the parent_activity_id attribute
-//				activity.setParentActivityId(newParentActivityId);
-//
-//				// Save or update the Activity object in the database
-//				session.saveOrUpdate(activity);
-//			}
-//
-//			transaction.commit();
-//		} catch (Exception e) {
-//			if (transaction != null) {
-//				transaction.rollback();
-//			}
-//			e.printStackTrace();
-//		}
+		super.findByPropertyAndUpdateOther(Activity.class, "parentActivityId", activityId, "parentActivityId",
+				newParentActivityId);
+	}
+	
+	public void changeDescription(Long activityId, String description) {
+		super.findByPropertyAndUpdateOther(Activity.class, "description", activityId, "description", description);
 	}
 
 }

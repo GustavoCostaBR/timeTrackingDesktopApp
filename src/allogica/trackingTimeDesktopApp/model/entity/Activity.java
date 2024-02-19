@@ -29,7 +29,6 @@ public class Activity {
 
 	@Column(name = "parent_activity_id") // Mapping for the parent activity ID
     private Long parentActivityId; // Field to store the parent activity ID
-	
 	public Long getParentActivityId() {
 		return parentActivityId;
 	}
@@ -39,14 +38,21 @@ public class Activity {
 
 	
 	private String name;
-
 	public String getName() {
 		return name;
 	}
-
-	
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	
+	
+	private String description;
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	
@@ -69,11 +75,32 @@ public class Activity {
 		this.end = end;
 	}
 	
-	
+	@Column(name = "total_time")
+	private Duration totalTime;
+	public Duration getTotalTime() {
+		return totalTime;
+	}
+	public void setTotalTime(Duration totalTime) {
+		this.totalTime = totalTime;
+	}
+
+
+	@Column(name = "useful_time")
+	private Duration usefulTime;
+	public Duration getUsefulTime() {
+		return usefulTime;
+	}
+	public void setUsefulTime(Duration usefulTime) {
+		this.usefulTime = usefulTime;
+	}
+
 
 	@OneToMany(cascade = CascadeType.ALL) // Specify the cascade type
 	@JoinColumn(name = "parent_activity_id") // Specify the column linking subactivities to their parent
 	private Map<Long, Activity> subactivities;
+	public Map<Long, Activity> getSubactivities() {
+		return subactivities;
+	}
 	public void addSubactivity(Long id, Activity subactivity) {
 		subactivities.put(id, subactivity);
 	}
@@ -89,18 +116,10 @@ public class Activity {
 		this.subactivities = new HashMap<>();
 		this.parentActivityId = 0L;
 	}
-
 	
-	public Duration calcTotalTime() {
-		Duration totalTime = Duration.ZERO;
-		if ((start != null && end != null) && this.subactivities.isEmpty()) {
-			return totalTime = Duration.between(start, end);
-		} else {
-			for (Activity subactivity : subactivities.values()) {
-				totalTime = totalTime.plus(subactivity.calcTotalTime());
-			}
-			return totalTime;
-		}
+	public Activity(Long parentActivityId, String name, LocalDateTime start) {
+		this.name = name;
+		this.start = start;
 	}
 
 }
