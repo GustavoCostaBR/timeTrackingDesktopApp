@@ -77,10 +77,12 @@ public class ActivityDAO extends GenericDAO<Activity> {
 		}
 	}
 
+	public void saveActivity(Activity activity) {
+		super.saveOrUpdate(activity);
+	}
 	
-	
-	public void changeParentActivityId(Long activityId, Long newParentActivityId) {
-		super.findAndUpdate(Activity.class, "parentActivityId", activityId, newParentActivityId);
+	public void changeParentActivityId(Long parentActivityId, Long newParentActivityId) {
+		super.findAndUpdate(Activity.class, "parentActivityId", parentActivityId, newParentActivityId);
 	}
 	
 	
@@ -88,27 +90,27 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	public void changeDescription(Long activityId, String description) {
 		Activity activity = super.findById(Activity.class, activityId);
 		activity.setDescription(description);
-		super.saveOrUpdate(activity);
+		saveActivity(activity);
 	}
 	public void changeStart(Long activityId, LocalDateTime start) {
 		Activity activity = super.findById(Activity.class, activityId);
 		activity.setStart(start);
-		super.saveOrUpdate(activity);
+		saveActivity(activity);
 	}
 	public void changeEnd(Long activityId, LocalDateTime end) {
 		Activity activity = super.findById(Activity.class, activityId);
 		activity.setEnd(end);
-		super.saveOrUpdate(activity);
+		saveActivity(activity);
 	}
 	public void changeName(Long activityId, String name) {
 		Activity activity = super.findById(Activity.class, activityId);
 		activity.setName(name);
-		super.saveOrUpdate(activity);
+		saveActivity(activity);
 	}
 	public void changeTotalTime(Long activityId, Duration tempo) {
 		Activity activity = super.findById(Activity.class, activityId);
 		activity.setTotalTime(tempo);
-		super.saveOrUpdate(activity);
+		saveActivity(activity);
 	}
 	
 }
