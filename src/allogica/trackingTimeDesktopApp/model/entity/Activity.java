@@ -3,10 +3,17 @@ package allogica.trackingTimeDesktopApp.model.entity;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "activity")
@@ -70,9 +77,9 @@ public class Activity {
 	public void addSubactivity(Long id, Activity subactivity) {
 		subactivities.put(id, subactivity);
 	}
-	public void setSubActivities(List<Activity> activities) {
-		for (Activity activity : activities) {
-			this.addSubactivity(activity.getId(), activity);
+	public void setSubActivities(Map<Long, Activity> activities) {
+		for (Map.Entry<Long, Activity> activity : activities.entrySet()) {
+			this.addSubactivity(activity.getKey(), activity.getValue());
 		}
 	}
 	
@@ -89,8 +96,8 @@ public class Activity {
 		if ((start != null && end != null) && this.subactivities.isEmpty()) {
 			return totalTime = Duration.between(start, end);
 		} else {
-			for (Activity subatividade : subactivities.values()) {
-				totalTime = totalTime.plus(subatividade.calcTotalTime());
+			for (Activity subactivity : subactivities.values()) {
+				totalTime = totalTime.plus(subactivity.calcTotalTime());
 			}
 			return totalTime;
 		}

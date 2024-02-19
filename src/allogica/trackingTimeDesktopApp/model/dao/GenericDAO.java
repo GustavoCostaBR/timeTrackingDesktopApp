@@ -1,9 +1,12 @@
 package allogica.trackingTimeDesktopApp.model.dao;
 
+import java.lang.reflect.Method;
+import java.util.List;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import java.util.List;
+import org.hibernate.query.Query;
 
 public abstract class GenericDAO<T> {
 
@@ -58,6 +61,54 @@ public abstract class GenericDAO<T> {
             return null;
         }
     }
+    
+    
+    
+    public List<T> findByProperty(Class<T> entityClass, String propertyName, Object propertyValue) {
+        try (Session session = sessionFactory.openSession()) {
+            String hql = "SELECT e FROM " + entityClass.getSimpleName() + " e WHERE e." + propertyName + " = :propertyValue";
+            Query<T> query = session.createQuery(hql, entityClass);
+            query.setParameter("propertyValue", propertyValue);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public void findByPropertyAndUpdateOther(Class<T> entityClass, String propertyName, Object propertyValue, String propertyToUpdate, Object newValue) {
+        try (Session session = sessionFactory.openSession()) {
+            // Find entities based on the specified property
+            List<T> entities = findByProperty(entityClass, propertyName, propertyValue);
+
+            // Update the specified property for each retrieved entity
+            if (entities != null) {
+                Transaction transaction = session.beginTransaction();
+                for (T entity : entities) {
+                    // Update the specified property
+                    try {
+                        Method setterMethod = entityClass.getMethod(getSetterMethodName(propertyToUpdate), newValue.getClass());
+                        setterMethod.invoke(entity, newValue);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    session.update(entity);
+                }
+                transaction.commit();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+ // Utility method to construct setter method name
+    private String getSetterMethodName(String propertyName) {
+        return "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+    }
+    
+    
+    
+    
 }
 
 
