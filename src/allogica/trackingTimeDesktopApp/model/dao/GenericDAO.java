@@ -101,6 +101,43 @@ public abstract class GenericDAO<T> {
         }
     }
     
+    
+    
+    public void findAndUpdate(Class<T> entityClass, String propertyName, Object propertyValue, Object newValue) {
+        try (Session session = sessionFactory.openSession()) {
+            // Find entities based on the specified property
+            List<T> entities = findByProperty(entityClass, propertyName, propertyValue);
+
+            // Update the specified property for each retrieved entity
+            if (entities != null) {
+                Transaction transaction = session.beginTransaction();
+                for (T entity : entities) {
+                    // Update the specified property directly
+                    updateProperty(entity, propertyName, newValue);
+                    session.update(entity);
+                }
+                transaction.commit();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    
+    
+    // Utility method to update a specific property of an entity
+    private void updateProperty(T entity, String propertyName, Object newValue) {
+        try {
+            // Call the appropriate setter method based on the property name
+            Method setterMethod = entity.getClass().getMethod(getSetterMethodName(propertyName), newValue.getClass());
+            setterMethod.invoke(entity, newValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+    
  // Utility method to construct setter method name
     private String getSetterMethodName(String propertyName) {
         return "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);

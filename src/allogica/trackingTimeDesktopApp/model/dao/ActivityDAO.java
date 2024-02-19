@@ -1,5 +1,7 @@
 package allogica.trackingTimeDesktopApp.model.dao;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,13 +77,38 @@ public class ActivityDAO extends GenericDAO<Activity> {
 		}
 	}
 
+	
+	
 	public void changeParentActivityId(Long activityId, Long newParentActivityId) {
-		super.findByPropertyAndUpdateOther(Activity.class, "parentActivityId", activityId, "parentActivityId",
-				newParentActivityId);
+		super.findAndUpdate(Activity.class, "parentActivityId", activityId, newParentActivityId);
 	}
 	
+	
+	
 	public void changeDescription(Long activityId, String description) {
-		super.findByPropertyAndUpdateOther(Activity.class, "description", activityId, "description", description);
+		Activity activity = super.findById(Activity.class, activityId);
+		activity.setDescription(description);
+		super.saveOrUpdate(activity);
 	}
-
+	public void changeStart(Long activityId, LocalDateTime start) {
+		Activity activity = super.findById(Activity.class, activityId);
+		activity.setStart(start);
+		super.saveOrUpdate(activity);
+	}
+	public void changeEnd(Long activityId, LocalDateTime end) {
+		Activity activity = super.findById(Activity.class, activityId);
+		activity.setEnd(end);
+		super.saveOrUpdate(activity);
+	}
+	public void changeName(Long activityId, String name) {
+		Activity activity = super.findById(Activity.class, activityId);
+		activity.setName(name);
+		super.saveOrUpdate(activity);
+	}
+	public void changeTotalTime(Long activityId, Duration tempo) {
+		Activity activity = super.findById(Activity.class, activityId);
+		activity.setTotalTime(tempo);
+		super.saveOrUpdate(activity);
+	}
+	
 }
