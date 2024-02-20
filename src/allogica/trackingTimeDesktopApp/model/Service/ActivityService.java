@@ -7,60 +7,126 @@ import java.util.Map;
 import org.hibernate.SessionFactory;
 
 import allogica.trackingTimeDesktopApp.model.dao.ActivityDAO;
+import allogica.trackingTimeDesktopApp.model.dao.SubactivityEndDAO;
+import allogica.trackingTimeDesktopApp.model.dao.SubactivityStartDAO;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
+import allogica.trackingTimeDesktopApp.model.entity.SubactivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.SubactivityStart;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
+import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
+import allogica.trackingTimeDesktoppApp.exceptions.UnconpatibleStartsEndsCount;
 
 
 public class ActivityService {
 	private ActivityDAO dao;
+	private SubactivityEndDAO daoEnd;
+	private SubactivityStartDAO daoStart;
 
 	public ActivityService(SessionFactory sessionFactory) {
 		dao = new ActivityDAO(sessionFactory);
+		daoEnd = new SubactivityEndDAO(sessionFactory);
+		daoStart = new SubactivityStartDAO(sessionFactory);
 	}
 
 	
 	
-	public void save(Activity activity) {
+	public void saveService(Activity activity) {
         dao.saveActivity(activity);
+    }
+	
+	public void saveService(Activity activity, SubactivityStart subactivityStart) {
+        dao.saveActivity(activity);
+        daoStart.saveGenericSubactivityTime(subactivityStart);
+    }
+	
+	public void saveService(Activity activity, SubactivityEnd subactivityEnd) {
+        dao.saveActivity(activity);
+        daoEnd.saveGenericSubactivityTime(subactivityEnd);
+    }
+	
+	public void saveService(Activity activity, SubactivityStart subactivityStart, SubactivityEnd subactivityEnd) {
+        dao.saveActivity(activity);
+        daoStart.saveGenericSubactivityTime(subactivityStart);
+        daoEnd.saveGenericSubactivityTime(subactivityEnd);
     }
 	
 	public void DeleteSubactivityStartService(Activity activity, SubactivityStart subactivityStart) {
 		activity.deleteSubActivityStart(subactivityStart);
-		dao.delete(activity);
+		daoStart.delete(subactivityStart);
+		saveService(activity);
 	}
 	
 	
 	
-	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException {
-		LocalDateTime end = activity.getEnd();
-		Map<Long, Activity> subactivities = activity.getSubactivities();
-		if (end != null) {
-			save(activity);
+	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException, UnconpatibleStartsEndsCount {
+		LocalDateTime end;
+		try {
+			end = activity.getLastEnd().getTime();
+		} catch (ThereIsNoEndException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			end = null;
+		}
+		if (end != null && (activity.getActivityStartCount() == activity.getActivityEndCount())) {
 			return activity;
 		}
+//		Starting verification of subactivities ends if it is not complete in the activity itself
+		Map<Long, Activity> subactivities = activity.getSubactivities();
 		if (!(subactivities.isEmpty())){
 			end = LocalDateTime.of(1900, 1, 1, 0, 0);
 			for (Activity subactivity : subactivities.values()) {
-				LocalDateTime subEnd = subactivity.getEnd();
+				LocalDateTime subEnd;
+				try {
+					subEnd = subactivity.getLastEnd().getTime();
+				} catch (ThereIsNoEndException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					subEnd = null;
+				}
 				if (subEnd != null) {
 					if (subEnd.isAfter(end)) {
 						end = subEnd;
 					}
 				} else {
-					subEnd = this.calcEnd(subactivity).getEnd();
-					if (subEnd.isAfter(end)) {
+					try {
+						subEnd = this.calcEnd(subactivity).getLastEnd().getTime();
+					} catch (ThereIsNoEndException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						subEnd = null;
+					} 
+					if (subEnd != null && subEnd.isAfter(end)) {
 						end = subEnd;
 					}
 				}
 			}
-			activity.setEnd(end);
-			save(activity);
-			return activity;
+			if (activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) {
+				activity.addEnd(end);
+				try {
+					saveService(activity, activity.getLastEnd());
+				} catch (ThereIsNoEndException e) {
+					e.printStackTrace();
+				} return activity;
+			}
+			else if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
+				try {
+					activity.deleteSubActivityEnd(activity.getLastEnd());
+					activity.addEnd(end);
+					saveService(activity, activity.getLastEnd());
+					return activity;
+				} catch (ThereIsNoEndException e) {
+					System.out.println("Not suposed to happen! The activity Id is: " + activity.getId());
+					e.printStackTrace();
+					return null;
+				} 
+			}
+			else {
+				throw new UnconpatibleStartsEndsCount("The number of ends and starts should be simillar! The activity Id is: " + activity.getId() + ". And the activity name is: "  + activity.getName()+ ".");
+			}
 		}
 		else {
-			throw new ActivityEndingTimeException("Or the activity should have an ending time or it should have subactivities. The activity Id id: " + activity.getId() + ".");
+			throw new ActivityEndingTimeException("Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: " + activity.getId() + ".");
 		}
 		
 	}

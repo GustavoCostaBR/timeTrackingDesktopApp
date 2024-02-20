@@ -17,6 +17,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
+import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
+
 @Entity
 @Table(name = "activity")
 public class Activity {
@@ -65,10 +68,16 @@ public class Activity {
 	public List<SubactivityStart> getStart() {
 		return subactivityStarts;
 	}
-	public SubactivityStart getLastStart() {
+	public SubactivityStart getLastStart() throws ThereIsNoStartException {
 		int siize = subactivityStarts.size();
+		if (siize == 0) {
+			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
 		SubactivityStart lastItem = subactivityStarts.get(siize - 1);
 		return (lastItem);
+	}
+	public int getActivityStartCount () {
+		return subactivityStarts.size();
 	}
 	public void deleteSubActivityStart(SubactivityStart subactivityStart) {
 		subactivityStarts.remove(subactivityStart);
@@ -84,10 +93,16 @@ public class Activity {
 	public List<SubactivityEnd> getEnd() {
 		return subactivityEnds;
 	}
-	public SubactivityEnd getLastEnd() {
+	public SubactivityEnd getLastEnd() throws ThereIsNoEndException {
 		int siize = subactivityEnds.size();
+		if (siize == 0) {
+			throw new ThereIsNoEndException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
 		SubactivityEnd lastItem = subactivityEnds.get(siize - 1);
 		return (lastItem);
+	}
+	public int getActivityEndCount () {
+		return subactivityEnds.size();
 	}
 	public void deleteSubActivityEnd(SubactivityEnd subactivityEnd) {
 		subactivityEnds.remove(subactivityEnd);
@@ -96,40 +111,40 @@ public class Activity {
 		subactivityEnds.add(new SubactivityEnd(this, end));
 	}
 
+	
+
+	
 	@Column(name = "total_time")
 	private Duration totalTime;
-
 	public Duration getTotalTime() {
 		return totalTime;
 	}
-
 	public void setTotalTime(Duration totalTime) {
 		this.totalTime = totalTime;
 	}
 
+	
+	
 	@Column(name = "useful_time")
 	private Duration usefulTime;
-
 	public Duration getUsefulTime() {
 		return usefulTime;
 	}
-
 	public void setUsefulTime(Duration usefulTime) {
 		this.usefulTime = usefulTime;
 	}
 
+	
+	
 	@OneToMany(cascade = CascadeType.ALL) // Specify the cascade type
 	@JoinColumn(name = "parent_activity_id") // Specify the column linking subactivities to their parent
 	private Map<Long, Activity> subactivities;
-
 	public Map<Long, Activity> getSubactivities() {
 		return subactivities;
 	}
-
 	public void addSubactivity(Long id, Activity subactivity) {
 		subactivities.put(id, subactivity);
 	}
-
 	public void setSubActivities(Map<Long, Activity> activities) {
 		for (Map.Entry<Long, Activity> activity : activities.entrySet()) {
 			this.addSubactivity(activity.getKey(), activity.getValue());

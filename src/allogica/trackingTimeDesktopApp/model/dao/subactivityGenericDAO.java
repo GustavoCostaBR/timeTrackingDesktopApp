@@ -9,7 +9,7 @@ public abstract class subactivityGenericDAO<T> extends GenericDAO<T> {
 	}
 
 	public void saveGenericSubactivityTime(T subactivity) {
-		this.saveOrUpdate(subactivity);
+		super.saveOrUpdate(subactivity);
 	}
 
 }
