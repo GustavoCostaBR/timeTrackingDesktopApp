@@ -68,6 +68,13 @@ public class Activity {
 	public List<ActivityStart> getStart() {
 		return activityStarts;
 	}
+	public List<LocalDateTime> getStartTime(){
+		List <LocalDateTime> startTime = new ArrayList<LocalDateTime>();
+		for (ActivityStart start :  getStart()) {
+			startTime.add(start.getTime());
+		}
+		return startTime;
+	}
 	public ActivityStart getLastStart() throws ThereIsNoStartException {
 		int siize = activityStarts.size();
 		if (siize == 0) {
@@ -100,6 +107,13 @@ public class Activity {
     private List<ActivityEnd> activityEnds;
 	public List<ActivityEnd> getEnd() {
 		return activityEnds;
+	}
+	public List<LocalDateTime> getEndTime(){
+		List <LocalDateTime> endTime = new ArrayList<LocalDateTime>();
+		for (ActivityEnd end :  getEnd()) {
+			endTime.add(end.getTime());
+		}
+		return endTime;
 	}
 	public ActivityEnd getLastEnd() throws ThereIsNoEndException {
 		int siize = activityEnds.size();
@@ -148,6 +162,24 @@ public class Activity {
 	}
 	public void setUsefulTime(Duration usefulTime) {
 		this.usefulTime = usefulTime;
+	}
+
+	public Duration sumUsefulTime(List<LocalDateTime> starts, List<LocalDateTime> ends) {
+		Duration usefulTime = Duration.ZERO;
+		Long counter1 = 0L;
+		Long counter2;
+		for (LocalDateTime end : ends) {
+			counter1++;
+			counter2 = 0L;
+			for (LocalDateTime start : starts) {
+				counter2++;
+				if (counter1 == counter2) {
+					usefulTime = usefulTime.plus(Duration.between(end, start));
+				}
+			}
+		}
+		this.usefulTime = usefulTime;
+		return usefulTime;
 	}
 
 	

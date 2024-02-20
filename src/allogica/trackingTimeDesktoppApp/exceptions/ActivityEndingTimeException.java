@@ -1,5 +1,8 @@
 package allogica.trackingTimeDesktoppApp.exceptions;
 
+/**
+ * Custom exception class for when an activity does not have subactivities or an incompatible count of ends.
+ */
 public class ActivityEndingTimeException extends Exception {
 	/**
 	 * 
