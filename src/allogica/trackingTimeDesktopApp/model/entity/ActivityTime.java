@@ -5,7 +5,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-public abstract class Subactivity {
+public abstract class ActivityTime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

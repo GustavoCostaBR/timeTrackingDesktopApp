@@ -1,21 +1,20 @@
 package allogica.trackingTimeDesktopApp.model.entity;
 
 import java.time.LocalDateTime;
-
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "subactivity_end")
-public class SubactivityEnd extends Subactivity {
+@Table(name = "subactivity_start")
+public class ActivityStart extends ActivityTime {
 
-    public SubactivityEnd() {
+    public ActivityStart() {
         // Default constructor required by JPA
     }
 
-    public SubactivityEnd(Activity activity, LocalDateTime endTime) {
+    public ActivityStart(Activity activity, LocalDateTime startTime) {
         super.setActivity(activity);
-        super.setTime(endTime);
+        super.setTime(startTime);
     }
 }
 
@@ -23,10 +22,9 @@ public class SubactivityEnd extends Subactivity {
 
 
 
-
 //@Entity
-//@Table(name = "subactivity_end")
-//public class SubactivityEnd {
+//@Table(name = "subactivity_start")
+//public class SubactivityStart {
 //	@Id
 //    @GeneratedValue(strategy = GenerationType.IDENTITY)
 //    private Long id;
@@ -38,24 +36,24 @@ public class SubactivityEnd extends Subactivity {
 //    @JoinColumn(name = "activity_id")
 //    private Activity activity;
 //
-//    @Column(name = "end_time")
-//    private LocalDateTime endTime;
+//    @Column(name = "start_time")
+//    private LocalDateTime startTime;
 //	public LocalDateTime getStartTime() {
-//		return endTime;
+//		return startTime;
 //	}
-//	public void setStartTime(LocalDateTime endTime) {
-//		this.endTime = endTime;
-//	}  
+//	public void setStartTime(LocalDateTime startTime) {
+//		this.startTime = startTime;
+//	}
 //	
 //	
-//	
-//	public SubactivityEnd() {
+//	public SubactivityStart() {
 //        // Default constructor required by JPA
 //    }
 //
-//    public SubactivityEnd(Activity activity, LocalDateTime endTime) {
+//    public SubactivityStart(Activity activity, LocalDateTime startTime) {
 //        this.activity = activity;
-//        this.endTime = endTime;
+//        this.startTime = startTime;
 //    }
+//	
 //	
 //}

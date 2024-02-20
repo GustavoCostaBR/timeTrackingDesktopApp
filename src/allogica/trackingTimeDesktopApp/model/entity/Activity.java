@@ -64,70 +64,67 @@ public class Activity {
 	}
 
 	@OneToMany(mappedBy = "activity", cascade = CascadeType.ALL)
-    private List<SubactivityStart> subactivityStarts;
-	public List<SubactivityStart> getStart() {
-		return subactivityStarts;
+    private List<ActivityStart> activityStarts;
+	public List<ActivityStart> getStart() {
+		return activityStarts;
 	}
-	public SubactivityStart getLastStart() throws ThereIsNoStartException {
-		int siize = subactivityStarts.size();
+	public ActivityStart getLastStart() throws ThereIsNoStartException {
+		int siize = activityStarts.size();
 		if (siize == 0) {
 			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		SubactivityStart lastItem = subactivityStarts.get(siize - 1);
+		ActivityStart lastItem = activityStarts.get(siize - 1);
 		return (lastItem);
 	}
-	public SubactivityStart getFirstStart() throws ThereIsNoStartException {
-		int siize = subactivityStarts.size();
+	public ActivityStart getFirstStart() throws ThereIsNoStartException {
+		int siize = activityStarts.size();
 		if (siize == 0) {
 			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		SubactivityStart firstItem = subactivityStarts.get(0);
+		ActivityStart firstItem = activityStarts.get(0);
 		return (firstItem);
 	}
 	public int getActivityStartCount () {
-		return subactivityStarts.size();
+		return activityStarts.size();
 	}
-	public void deleteSubActivityStart(SubactivityStart subactivityStart) {
-		subactivityStarts.remove(subactivityStart);
+	public void deleteSubActivityStart(ActivityStart activityStart) {
+		activityStarts.remove(activityStart);
 	}
 	public void addStart(LocalDateTime start) {
-		subactivityStarts.add(new SubactivityStart(this, start));
+		activityStarts.add(new ActivityStart(this, start));
 	}
 
 	
 	
 	@OneToMany(mappedBy = "activity", cascade = CascadeType.ALL)
-    private List<SubactivityEnd> subactivityEnds;
-	public List<SubactivityEnd> getEnd() {
-		return subactivityEnds;
+    private List<ActivityEnd> activityEnds;
+	public List<ActivityEnd> getEnd() {
+		return activityEnds;
 	}
-	public SubactivityEnd getLastEnd() throws ThereIsNoEndException {
-		int siize = subactivityEnds.size();
+	public ActivityEnd getLastEnd() throws ThereIsNoEndException {
+		int siize = activityEnds.size();
 		if (siize == 0) {
 			throw new ThereIsNoEndException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		SubactivityEnd lastItem = subactivityEnds.get(siize - 1);
+		ActivityEnd lastItem = activityEnds.get(siize - 1);
 		return (lastItem);
 	}
-	public SubactivityEnd getFirsEnd() throws ThereIsNoEndException {
-		int siize = subactivityEnds.size();
+	public ActivityEnd getFirsEnd() throws ThereIsNoEndException {
+		int siize = activityEnds.size();
 		if (siize == 0) {
 			throw new ThereIsNoEndException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		SubactivityEnd firstItem = subactivityEnds.get(0);
+		ActivityEnd firstItem = activityEnds.get(0);
 		return (firstItem);
 	}
-	
-	
-	
 	public int getActivityEndCount () {
-		return subactivityEnds.size();
+		return activityEnds.size();
 	}
-	public void deleteSubActivityEnd(SubactivityEnd subactivityEnd) {
-		subactivityEnds.remove(subactivityEnd);
+	public void deleteSubActivityEnd(ActivityEnd activityEnd) {
+		activityEnds.remove(activityEnd);
 	}
 	public void addEnd(LocalDateTime end) {
-		subactivityEnds.add(new SubactivityEnd(this, end));
+		activityEnds.add(new ActivityEnd(this, end));
 	}
 
 	
@@ -174,8 +171,8 @@ public class Activity {
 		this.name = name;
 		this.subactivities = new HashMap<>();
 		this.parentActivityId = 0L;
-		this.subactivityStarts = new ArrayList<>();
-        this.subactivityEnds = new ArrayList<>();
+		this.activityStarts = new ArrayList<>();
+        this.activityEnds = new ArrayList<>();
 	}
 
 //	public Activity(Long parentActivityId, String name, LocalDateTime start) {

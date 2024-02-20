@@ -1,20 +1,21 @@
 package allogica.trackingTimeDesktopApp.model.entity;
 
 import java.time.LocalDateTime;
+
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "subactivity_start")
-public class SubactivityStart extends Subactivity {
+@Table(name = "subactivity_end")
+public class ActivityEnd extends ActivityTime {
 
-    public SubactivityStart() {
+    public ActivityEnd() {
         // Default constructor required by JPA
     }
 
-    public SubactivityStart(Activity activity, LocalDateTime startTime) {
+    public ActivityEnd(Activity activity, LocalDateTime endTime) {
         super.setActivity(activity);
-        super.setTime(startTime);
+        super.setTime(endTime);
     }
 }
 
@@ -22,9 +23,10 @@ public class SubactivityStart extends Subactivity {
 
 
 
+
 //@Entity
-//@Table(name = "subactivity_start")
-//public class SubactivityStart {
+//@Table(name = "subactivity_end")
+//public class SubactivityEnd {
 //	@Id
 //    @GeneratedValue(strategy = GenerationType.IDENTITY)
 //    private Long id;
@@ -36,24 +38,24 @@ public class SubactivityStart extends Subactivity {
 //    @JoinColumn(name = "activity_id")
 //    private Activity activity;
 //
-//    @Column(name = "start_time")
-//    private LocalDateTime startTime;
+//    @Column(name = "end_time")
+//    private LocalDateTime endTime;
 //	public LocalDateTime getStartTime() {
-//		return startTime;
+//		return endTime;
 //	}
-//	public void setStartTime(LocalDateTime startTime) {
-//		this.startTime = startTime;
-//	}
+//	public void setStartTime(LocalDateTime endTime) {
+//		this.endTime = endTime;
+//	}  
 //	
 //	
-//	public SubactivityStart() {
+//	
+//	public SubactivityEnd() {
 //        // Default constructor required by JPA
 //    }
 //
-//    public SubactivityStart(Activity activity, LocalDateTime startTime) {
+//    public SubactivityEnd(Activity activity, LocalDateTime endTime) {
 //        this.activity = activity;
-//        this.startTime = startTime;
+//        this.endTime = endTime;
 //    }
-//	
 //	
 //}

@@ -12,8 +12,8 @@ import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
-import allogica.trackingTimeDesktopApp.model.entity.SubactivityEnd;
-import allogica.trackingTimeDesktopApp.model.entity.SubactivityStart;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 
 public class ActivityDAO extends GenericDAO<Activity> {
 
@@ -96,7 +96,7 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	}
 	public void changeAddStart(Long activityId, LocalDateTime start) {
 		Activity activity = super.findById(Activity.class, activityId);
-		SubactivityStart subactivityStart = new SubactivityStart(activity, start);
+		ActivityStart subactivityStart = new ActivityStart(activity, start);
 		SubactivityStartDAO subactivityStartDAO = new SubactivityStartDAO(sessionFactory);
 	    subactivityStartDAO.saveGenericSubactivityTime(subactivityStart);
 		activity.addEnd(start);		
@@ -104,7 +104,7 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	}
 	public void changeAddEnd(Long activityId, LocalDateTime end) {
 		Activity activity = super.findById(Activity.class, activityId);
-		SubactivityEnd subactivityEnd = new SubactivityEnd(activity, end);
+		ActivityEnd subactivityEnd = new ActivityEnd(activity, end);
 		SubactivityEndDAO subactivityEndDAO = new SubactivityEndDAO(sessionFactory);
 	    subactivityEndDAO.saveGenericSubactivityTime(subactivityEnd);
 		activity.addEnd(end);		

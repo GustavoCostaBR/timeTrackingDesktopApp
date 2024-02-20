@@ -1,9 +1,8 @@
 package allogica.trackingTimeDesktopApp.model.Service;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 
 import org.hibernate.SessionFactory;
@@ -12,8 +11,8 @@ import allogica.trackingTimeDesktopApp.model.dao.ActivityDAO;
 import allogica.trackingTimeDesktopApp.model.dao.SubactivityEndDAO;
 import allogica.trackingTimeDesktopApp.model.dao.SubactivityStartDAO;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
-import allogica.trackingTimeDesktopApp.model.entity.SubactivityEnd;
-import allogica.trackingTimeDesktopApp.model.entity.SubactivityStart;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
@@ -38,23 +37,23 @@ public class ActivityService {
         dao.saveActivity(activity);
     }
 	
-	public void saveService(Activity activity, SubactivityStart subactivityStart) {
+	public void saveService(Activity activity, ActivityStart subactivityStart) {
         dao.saveActivity(activity);
         daoStart.saveGenericSubactivityTime(subactivityStart);
     }
 	
-	public void saveService(Activity activity, SubactivityEnd subactivityEnd) {
+	public void saveService(Activity activity, ActivityEnd subactivityEnd) {
         dao.saveActivity(activity);
         daoEnd.saveGenericSubactivityTime(subactivityEnd);
     }
 	
-	public void saveService(Activity activity, SubactivityStart subactivityStart, SubactivityEnd subactivityEnd) {
+	public void saveService(Activity activity, ActivityStart subactivityStart, ActivityEnd subactivityEnd) {
         dao.saveActivity(activity);
         daoStart.saveGenericSubactivityTime(subactivityStart);
         daoEnd.saveGenericSubactivityTime(subactivityEnd);
     }
 	
-	public void DeleteSubactivityStartService(Activity activity, SubactivityStart subactivityStart) {
+	public void DeleteSubactivityStartService(Activity activity, ActivityStart subactivityStart) {
 		activity.deleteSubActivityStart(subactivityStart);
 		daoStart.delete(subactivityStart);
 		saveService(activity);
@@ -188,13 +187,25 @@ public class ActivityService {
 		else {
 			throw new ActivityStartingTimeException("The activity with activityID equals to " + activity.getId() + " has no starting time.");
 		}
+//		It will never get to this point, but for the eclipse IDE to be happy...
 		return activity;
 	}
 	
 	
 	
 	public Activity calcUsefulTime(Activity activity) {
-		
+		Map <Long, Activity> subActivities = activity.getSubactivities();
+		Duration usefulTime = Duration.ZERO;
+		if (subActivities.isEmpty()) {
+			if (activity.getParentActivityId() == 0) {
+				List<ActivityEnd> end = activity.getEnd();
+				List<ActivityStart> start = activity.getStart();
+//				if 
+//				for ()
+//				
+			}
+		}
+			
 		return activity;
 	}
 
