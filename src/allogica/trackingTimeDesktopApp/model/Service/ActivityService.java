@@ -1,7 +1,9 @@
 package allogica.trackingTimeDesktopApp.model.Service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 
 import org.hibernate.SessionFactory;
@@ -14,8 +16,9 @@ import allogica.trackingTimeDesktopApp.model.entity.SubactivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.SubactivityStart;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
+import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
-import allogica.trackingTimeDesktoppApp.exceptions.UnconpatibleStartsEndsCount;
+import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
 
 
 public class ActivityService {
@@ -59,7 +62,7 @@ public class ActivityService {
 	
 	
 	
-	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException, UnconpatibleStartsEndsCount {
+	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
 		LocalDateTime end;
 		try {
 			end = activity.getLastEnd().getTime();
@@ -116,13 +119,12 @@ public class ActivityService {
 					saveService(activity, activity.getLastEnd());
 					return activity;
 				} catch (ThereIsNoEndException e) {
-					System.out.println("Not suposed to happen! The activity Id is: " + activity.getId());
 					e.printStackTrace();
 					return null;
 				} 
 			}
 			else {
-				throw new UnconpatibleStartsEndsCount("The number of ends and starts should be simillar! The activity Id is: " + activity.getId() + ". And the activity name is: "  + activity.getName()+ ".");
+				throw new IncompatibleStartsEndsCount("The number of ends and starts should be simillar! The activity Id is: " + activity.getId() + ". And the activity name is: "  + activity.getName()+ ".");
 			}
 		}
 		else {
@@ -133,27 +135,60 @@ public class ActivityService {
 	
 	
 	
-	public Activity calcTotalTime(Activity activity) throws ActivityEndingTimeException, ActivityStartingTimeException {
+	public Activity calcTotalTime(Activity activity) throws ActivityEndingTimeException, ActivityStartingTimeException, IncompatibleStartsEndsCount, ThereIsNoStartException, ThereIsNoEndException {
 		Duration totalTime = Duration.ZERO;
-		LocalDateTime start = activity.getStart();
-		LocalDateTime end = activity.getEnd();
-		
-		if (start != null && end != null) {
-			totalTime = Duration.between(start, end);
-			activity.setTotalTime(totalTime);
-			save(activity);
-			return activity;
-
-		} else if (start != null) {
-			end = this.calcEnd(activity).getEnd();
-			totalTime = Duration.between(start, end);
-			activity.setTotalTime(totalTime);
-			save(activity);
-			return activity;
+		LocalDateTime start;
+		LocalDateTime end;
+		if (activity.getActivityStartCount() != 0) {
+			if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
+				start = activity.getFirstStart().getTime();
+				end = activity.getLastEnd().getTime();
+				totalTime =  Duration.between(start, end);
+				if (activity.getTotalTime() != totalTime) {
+					activity.setTotalTime(totalTime);
+					saveService(activity);
+					return activity;
+				}
+				return activity;
+			}
+			if (activity.getActivityStartCount() == (activity.getActivityEndCount()+1)){
+				Activity temporary;
+				try {
+					temporary = calcEnd(activity);
+					activity = temporary;
+				} catch (ActivityEndingTimeException e) {
+					e.printStackTrace();
+					start = activity.getFirstStart().getTime();
+					totalTime =  Duration.between(start, LocalDateTime.now());
+					activity.setTotalTime(totalTime);
+					saveService(activity);
+					return activity;
+				} catch (IncompatibleStartsEndsCount e) {
+					System.out.println("Serious. It's not supposed to happen!");
+					e.printStackTrace();
+					start = activity.getFirstStart().getTime();
+					totalTime =  Duration.between(start, LocalDateTime.now());
+					activity.setTotalTime(totalTime);
+					saveService(activity);
+					return activity;
+				}
+				start = activity.getFirstStart().getTime();
+				end = activity.getLastEnd().getTime();
+				totalTime =  Duration.between(start, LocalDateTime.now());
+				if (totalTime != activity.getTotalTime()) {
+					activity.setTotalTime(totalTime);
+					saveService(activity);
+					return activity;
+				}
+			}
+			else {
+				throw new IncompatibleStartsEndsCount("The number of ends and starts should be simillar! The activity Id is: " + activity.getId() + ". And the activity name is: "  + activity.getName()+ ".");
+			}
 		}
 		else {
 			throw new ActivityStartingTimeException("The activity with activityID equals to " + activity.getId() + " has no starting time.");
 		}
+		return activity;
 	}
 	
 	

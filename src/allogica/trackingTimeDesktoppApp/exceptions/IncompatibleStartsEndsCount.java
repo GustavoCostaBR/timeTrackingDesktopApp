@@ -1,12 +1,12 @@
 package allogica.trackingTimeDesktoppApp.exceptions;
 
-public class UnconpatibleStartsEndsCount extends Exception {
+public class IncompatibleStartsEndsCount extends Exception {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public UnconpatibleStartsEndsCount(String message) {
+	public IncompatibleStartsEndsCount(String message) {
 		super(message);
 	}
 }

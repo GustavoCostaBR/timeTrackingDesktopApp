@@ -76,6 +76,14 @@ public class Activity {
 		SubactivityStart lastItem = subactivityStarts.get(siize - 1);
 		return (lastItem);
 	}
+	public SubactivityStart getFirstStart() throws ThereIsNoStartException {
+		int siize = subactivityStarts.size();
+		if (siize == 0) {
+			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
+		SubactivityStart firstItem = subactivityStarts.get(0);
+		return (firstItem);
+	}
 	public int getActivityStartCount () {
 		return subactivityStarts.size();
 	}
@@ -101,6 +109,17 @@ public class Activity {
 		SubactivityEnd lastItem = subactivityEnds.get(siize - 1);
 		return (lastItem);
 	}
+	public SubactivityEnd getFirsEnd() throws ThereIsNoEndException {
+		int siize = subactivityEnds.size();
+		if (siize == 0) {
+			throw new ThereIsNoEndException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
+		SubactivityEnd firstItem = subactivityEnds.get(0);
+		return (firstItem);
+	}
+	
+	
+	
 	public int getActivityEndCount () {
 		return subactivityEnds.size();
 	}
