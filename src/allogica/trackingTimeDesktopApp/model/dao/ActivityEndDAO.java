@@ -4,9 +4,9 @@ import org.hibernate.SessionFactory;
 
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 
-public class SubactivityEndDAO extends subactivityGenericDAO<ActivityEnd> {
+public class ActivityEndDAO extends ActivityGenericTimeDAO<ActivityEnd> {
 	
-	public SubactivityEndDAO(SessionFactory sessionFactory) {
+	public ActivityEndDAO(SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
 }

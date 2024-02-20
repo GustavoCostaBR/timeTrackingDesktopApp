@@ -97,16 +97,16 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	public void changeAddStart(Long activityId, LocalDateTime start) {
 		Activity activity = super.findById(Activity.class, activityId);
 		ActivityStart subactivityStart = new ActivityStart(activity, start);
-		SubactivityStartDAO subactivityStartDAO = new SubactivityStartDAO(sessionFactory);
-	    subactivityStartDAO.saveGenericSubactivityTime(subactivityStart);
+		ActivityStartDAO subactivityStartDAO = new ActivityStartDAO(sessionFactory);
+	    subactivityStartDAO.saveGenericActivityTime(subactivityStart);
 		activity.addEnd(start);		
 		saveActivity(activity);
 	}
 	public void changeAddEnd(Long activityId, LocalDateTime end) {
 		Activity activity = super.findById(Activity.class, activityId);
 		ActivityEnd subactivityEnd = new ActivityEnd(activity, end);
-		SubactivityEndDAO subactivityEndDAO = new SubactivityEndDAO(sessionFactory);
-	    subactivityEndDAO.saveGenericSubactivityTime(subactivityEnd);
+		ActivityEndDAO subactivityEndDAO = new ActivityEndDAO(sessionFactory);
+	    subactivityEndDAO.saveGenericActivityTime(subactivityEnd);
 		activity.addEnd(end);		
 		saveActivity(activity);
 	}

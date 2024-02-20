@@ -94,11 +94,14 @@ public class Activity {
 	public int getActivityStartCount () {
 		return activityStarts.size();
 	}
-	public void deleteSubActivityStart(ActivityStart activityStart) {
+	public void deleteActivityStart(ActivityStart activityStart) {
 		activityStarts.remove(activityStart);
 	}
 	public void addStart(LocalDateTime start) {
 		activityStarts.add(new ActivityStart(this, start));
+	}
+	public void addStart(ActivityStart start) {
+		activityStarts.add(start);
 	}
 
 	
@@ -134,11 +137,14 @@ public class Activity {
 	public int getActivityEndCount () {
 		return activityEnds.size();
 	}
-	public void deleteSubActivityEnd(ActivityEnd activityEnd) {
+	public void deleteActivityEnd(ActivityEnd activityEnd) {
 		activityEnds.remove(activityEnd);
 	}
 	public void addEnd(LocalDateTime end) {
 		activityEnds.add(new ActivityEnd(this, end));
+	}
+	public void addEnd(ActivityEnd end) {
+		activityEnds.add(end);
 	}
 
 	
@@ -163,7 +169,6 @@ public class Activity {
 	public void setUsefulTime(Duration usefulTime) {
 		this.usefulTime = usefulTime;
 	}
-
 	public Duration sumUsefulTime(List<LocalDateTime> starts, List<LocalDateTime> ends) {
 		Duration usefulTime = Duration.ZERO;
 		Long counter1 = 0L;

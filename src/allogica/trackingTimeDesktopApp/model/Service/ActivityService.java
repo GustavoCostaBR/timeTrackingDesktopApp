@@ -8,8 +8,8 @@ import java.util.Map;
 import org.hibernate.SessionFactory;
 
 import allogica.trackingTimeDesktopApp.model.dao.ActivityDAO;
-import allogica.trackingTimeDesktopApp.model.dao.SubactivityEndDAO;
-import allogica.trackingTimeDesktopApp.model.dao.SubactivityStartDAO;
+import allogica.trackingTimeDesktopApp.model.dao.ActivityEndDAO;
+import allogica.trackingTimeDesktopApp.model.dao.ActivityStartDAO;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
@@ -21,13 +21,13 @@ import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
 
 public class ActivityService {
 	private ActivityDAO dao;
-	private SubactivityEndDAO daoEnd;
-	private SubactivityStartDAO daoStart;
+	private ActivityEndDAO daoEnd;
+	private ActivityStartDAO daoStart;
 
 	public ActivityService(SessionFactory sessionFactory) {
 		dao = new ActivityDAO(sessionFactory);
-		daoEnd = new SubactivityEndDAO(sessionFactory);
-		daoStart = new SubactivityStartDAO(sessionFactory);
+		daoEnd = new ActivityEndDAO(sessionFactory);
+		daoStart = new ActivityStartDAO(sessionFactory);
 	}
 
 	public void saveService(Activity activity) {
@@ -36,23 +36,35 @@ public class ActivityService {
 
 	public void saveService(Activity activity, ActivityStart subactivityStart) {
 		dao.saveActivity(activity);
-		daoStart.saveGenericSubactivityTime(subactivityStart);
+		daoStart.saveGenericActivityTime(subactivityStart);
 	}
 
 	public void saveService(Activity activity, ActivityEnd subactivityEnd) {
 		dao.saveActivity(activity);
-		daoEnd.saveGenericSubactivityTime(subactivityEnd);
+		daoEnd.saveGenericActivityTime(subactivityEnd);
 	}
 
 	public void saveService(Activity activity, ActivityStart subactivityStart, ActivityEnd subactivityEnd) {
 		dao.saveActivity(activity);
-		daoStart.saveGenericSubactivityTime(subactivityStart);
-		daoEnd.saveGenericSubactivityTime(subactivityEnd);
+		daoStart.saveGenericActivityTime(subactivityStart);
+		daoEnd.saveGenericActivityTime(subactivityEnd);
 	}
 
-	public void DeleteSubactivityStartService(Activity activity, ActivityStart subactivityStart) {
-		activity.deleteSubActivityStart(subactivityStart);
-		daoStart.delete(subactivityStart);
+	public void deleteActivityStartService(Activity activity, ActivityStart activityStart) {
+		activity.deleteActivityStart(activityStart);
+		daoStart.delete(activityStart);
+		saveService(activity);
+	}
+	
+	public Activity addActivityStartService(Activity activity, ActivityStart activityStart) {
+		activity.addStart(activityStart);
+		saveService(activity, activityStart);
+		return activity;
+	}
+	
+	public void deleteActivityEndService(Activity activity, ActivityEnd activityEnd) {
+		activity.deleteActivityEnd(activityEnd);
+		daoEnd.delete(activityEnd);
 		saveService(activity);
 	}
 
@@ -108,7 +120,7 @@ public class ActivityService {
 				return activity;
 			} else if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
 				try {
-					activity.deleteSubActivityEnd(activity.getLastEnd());
+					activity.deleteActivityEnd(activity.getLastEnd());
 					activity.addEnd(end);
 					saveService(activity, activity.getLastEnd());
 					return activity;
