@@ -3,6 +3,7 @@ package allogica.trackingTimeDesktopApp.model.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,8 +17,10 @@ import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityTime;
+import allogica.trackingTimeDesktopApp.model.entity.TimeInterval;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
+import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
@@ -68,7 +71,27 @@ public class ActivityService {
 	public void checkIntervalAvailability(LocalDate dayInput) {
 		List <ActivityEnd> ends = daoEnd.findByDateRange(ActivityEnd.class, dayInput, dayInput.plusDays(1));
 		List <ActivityStart> starts = daoStart.findByDateRange(ActivityStart.class, dayInput, dayInput.plusDays(1));
-//		if (ends.get(0).getActivity().getId())
+		Boolean startOfDay = false;
+		Boolean endOfDay = false;
+		LocalDateTime temporaryStart;
+		LocalDateTime temporaryEnd;
+//		Checking if there wasn't a activity that started in one day and stopped in other
+		if (ends.get(0).getActivity().getId() != starts.get(0).getActivity().getId()) {
+			if (starts.get(0).getTime().isAfter(ends.get(0).getTime())) {
+				temporaryEnd = ends.get(ends.size()-1).getTime();
+				ends.remove(0);
+				startOfDay = true;
+			}
+		}
+		if (starts.get(starts.size()-1).getActivity().getId() != ends.get(ends.size()-1).getActivity().getId()) {
+			if (starts.get(starts.size()-1).getTime().isAfter(ends.get(ends.size()-1).getTime())) {
+				temporaryStart = starts.get(starts.size()-1).getTime();
+				starts.remove(starts.size()-1);
+				endOfDay = true;
+		}
+		if (starts.size() != ends.size()) {
+			throw new CompromisedDataBaseException("The number of Ends and Starts for a specific day should match after corrections, it is not the case. Verify the date " + dayInput);
+		}
 		List <LocalDateTime> endsTime = new ArrayList<LocalDateTime>();
 		List <LocalDateTime> startsTime = new ArrayList<LocalDateTime>();
 		for (ActivityEnd end : ends) {
@@ -77,8 +100,38 @@ public class ActivityService {
 		for (ActivityStart start : starts) {
 			startsTime.add(start.getTime());
 		}
-		
+		List <TimeInterval> interval;
+		if (!(startOfDay)) {
+			if (!(endOfDay)) {
+//				Beginning of the day until the first start
+				interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
+				interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+//				Last end until the ending of the day
+				interval.add(new TimeInterval(endsTime.get(endsTime.size()-1), endsTime.get(0).with(LocalTime.MAX)));
+				}
+			else {
+//				Beginning of the day until the first start
+				interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
+				interval = TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime);
+//				Last end until the removed start
+				interval.add(new TimeInterval(endsTime.get(endsTime.size()-1), temporaryStart));	
+		}
 	}
+		else {
+			if (!(endOfDay)) {
+				interval = TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime);
+				interval.add(new TimeInterval(startsTime.get(startsTime.size()-1)));
+				}
+			}
+			else {
+				for (int i = 0; i < starts.size() - 1; i++) {
+					interval.add(new TimeInterval(endsTime.get(i), startsTime.get(i+1)));
+			}
+				interval.add(new TimeInterval(startsTime.get(startsTime.size()-1), startsTime.get(startsTime.size()-1).with(LocalTime.MAX)));	
+		}
+		}
+			
+		}
 	
 	public void deleteActivityStartService(Activity activity, ActivityStart activityStart) {
 		activity.deleteActivityStart(activityStart);
@@ -98,6 +151,16 @@ public class ActivityService {
 			}
 			else if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				deleteActivityEndService(currentActivity, currentActivity.getLastEnd());
+				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
+				stopsCurrentActivityService(false);
+				activity.addStart(activityTimeStart);
+				activity.setCurrent(true);
+				saveService(activity, (ActivityStart)activityTimeStart);
+				return activity;
+		}	
+		}
+		else if ((currentActivity.getActivityEndCount() + 1) == currentActivity.getActivityStartCount()) {
+			if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
 				stopsCurrentActivityService(false);
 				activity.addStart(activityTimeStart);
