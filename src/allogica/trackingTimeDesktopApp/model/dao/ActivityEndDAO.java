@@ -9,4 +9,5 @@ public class ActivityEndDAO extends ActivityGenericTimeDAO<ActivityEnd> {
 	public ActivityEndDAO(SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
+	
 }

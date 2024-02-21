@@ -1,7 +1,9 @@
 package allogica.trackingTimeDesktopApp.model.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +15,7 @@ import allogica.trackingTimeDesktopApp.model.dao.ActivityStartDAO;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityTime;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
@@ -50,22 +53,79 @@ public class ActivityService {
 		daoEnd.saveGenericActivityTime(subactivityEnd);
 	}
 
+	
+	public Activity stopsCurrentActivityService(Boolean state1) {
+		Activity activity = dao.stopsCurrentActivity(state1);
+		try {
+			saveService(activity, activity.getLastEnd());
+		} catch (ThereIsNoEndException e) {
+			System.out.println("Serious. It's not supposed to happen! The problem happend in stopsCurrentActivityService");
+			e.printStackTrace();
+		}
+		return activity;
+	}
+	
+	public void checkIntervalAvailability(LocalDate dayInput) {
+		List <ActivityEnd> ends = daoEnd.findByDateRange(ActivityEnd.class, dayInput, dayInput.plusDays(1));
+		List <ActivityStart> starts = daoStart.findByDateRange(ActivityStart.class, dayInput, dayInput.plusDays(1));
+//		if (ends.get(0).getActivity().getId())
+		List <LocalDateTime> endsTime = new ArrayList<LocalDateTime>();
+		List <LocalDateTime> startsTime = new ArrayList<LocalDateTime>();
+		for (ActivityEnd end : ends) {
+			endsTime.add(end.getTime());
+		}
+		for (ActivityStart start : starts) {
+			startsTime.add(start.getTime());
+		}
+		
+	}
+	
 	public void deleteActivityStartService(Activity activity, ActivityStart activityStart) {
 		activity.deleteActivityStart(activityStart);
 		daoStart.delete(activityStart);
 		saveService(activity);
 	}
 	
-	public Activity addActivityStartService(Activity activity, ActivityStart activityStart) {
-		activity.addStart(activityStart);
-		saveService(activity, activityStart);
+	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart) throws ThereIsNoEndException, ThereIsNoStartException {
+		Activity currentActivity = dao.findByProperty(Activity.class, "current", true).get(0);
+		if (currentActivity.getActivityEndCount() == currentActivity.getActivityStartCount()) {
+			if (activityTimeStart.getTime().isAfter(currentActivity.getLastEnd().getTime())) {
+				stopsCurrentActivityService(false);
+				activity.addStart(activityTimeStart);
+				activity.setCurrent(true);
+				saveService(activity, (ActivityStart)activityTimeStart);
+				return activity;
+			}
+			else if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
+				deleteActivityEndService(currentActivity, currentActivity.getLastEnd());
+				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
+				stopsCurrentActivityService(false);
+				activity.addStart(activityTimeStart);
+				activity.setCurrent(true);
+				saveService(activity, (ActivityStart)activityTimeStart);
+				return activity;
+		}	
+		}
 		return activity;
-	}
-	
+//		if ()
+//		super.findByProperty(Activity.class, "current", true);
+//		activity.addStart(activityStart);
+//		saveService(activity, activityStart);
+//		return activity;
+	}	
 	public Activity addActivityStartService(Activity activity) {
-		ActivityStart newStart = new ActivityStart(activity, LocalDateTime.now());
-		activity.addStart(newStart);
-		saveService(activity, newStart);
+//		If the is use, I will get the activity that got stopped
+		ActivityStart newStart;
+		try {
+			newStart = new ActivityStart(activity, stopsCurrentActivityService(false).getLastEnd().getTime()); 
+			activity.addStart(newStart);
+			activity.setCurrent(true);
+			saveService(activity, newStart);
+			return activity;
+		} catch (ThereIsNoEndException e) {
+			System.out.println("Serious. It's not supposed to happen! The problem happend in the addActivityStartService");
+			e.printStackTrace();
+		}
 		return activity;
 	}
 	

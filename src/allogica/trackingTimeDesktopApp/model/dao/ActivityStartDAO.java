@@ -9,4 +9,5 @@ public class ActivityStartDAO extends ActivityGenericTimeDAO<ActivityStart> {
 	public ActivityStartDAO(SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
+	
 }

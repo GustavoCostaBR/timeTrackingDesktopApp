@@ -53,42 +53,52 @@ public class Activity {
 		this.name = name;
 	}
 
-	private String description;
+	
+	@Column(name = "current")
+    private boolean current;
+	public boolean isCurrent() {
+		return current;
+	}
+	public void setCurrent(boolean current) {
+		this.current = current;
+	}
 
+	
+	@Column(name = "description")
+	private String description;
 	public String getDescription() {
 		return description;
 	}
-
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
 	@OneToMany(mappedBy = "activity", cascade = CascadeType.ALL)
-    private List<ActivityStart> activityStarts;
-	public List<ActivityStart> getStart() {
+    private List<ActivityTime> activityStarts;
+	public List<ActivityTime> getStart() {
 		return activityStarts;
 	}
 	public List<LocalDateTime> getStartTime(){
 		List <LocalDateTime> startTime = new ArrayList<LocalDateTime>();
-		for (ActivityStart start :  getStart()) {
+		for (ActivityTime start :  getStart()) {
 			startTime.add(start.getTime());
 		}
 		return startTime;
 	}
-	public ActivityStart getLastStart() throws ThereIsNoStartException {
+	public ActivityTime getLastStart() throws ThereIsNoStartException {
 		int siize = activityStarts.size();
 		if (siize == 0) {
 			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		ActivityStart lastItem = activityStarts.get(siize - 1);
+		ActivityTime lastItem = activityStarts.get(siize - 1);
 		return (lastItem);
 	}
-	public ActivityStart getFirstStart() throws ThereIsNoStartException {
+	public ActivityTime getFirstStart() throws ThereIsNoStartException {
 		int siize = activityStarts.size();
 		if (siize == 0) {
 			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		ActivityStart firstItem = activityStarts.get(0);
+		ActivityTime firstItem = activityStarts.get(0);
 		return (firstItem);
 	}
 	public int getActivityStartCount () {
@@ -100,7 +110,7 @@ public class Activity {
 	public void addStart(LocalDateTime start) {
 		activityStarts.add(new ActivityStart(this, start));
 	}
-	public void addStart(ActivityStart start) {
+	public void addStart(ActivityTime start) {
 		activityStarts.add(start);
 	}
 

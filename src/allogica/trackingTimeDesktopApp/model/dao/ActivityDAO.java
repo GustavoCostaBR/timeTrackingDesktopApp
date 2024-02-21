@@ -88,6 +88,16 @@ public class ActivityDAO extends GenericDAO<Activity> {
 	}
 	
 	
+	public Activity stopsCurrentActivity(Boolean state1) {
+		List <Activity> temporaryActivity = super.findByProperty(Activity.class, "current", true);
+		LocalDateTime temp = LocalDateTime.now();
+		if ((temporaryActivity.get(0).getActivityEndCount() + 1) == temporaryActivity.get(0).getActivityStartCount()) {
+			temporaryActivity.get(0).addEnd(temp);
+		}
+		temporaryActivity.get(0).setCurrent(state1);
+		return temporaryActivity.get(0);		
+	}
+	
 	
 	public void changeDescription(Long activityId, String description) {
 		Activity activity = super.findById(Activity.class, activityId);
