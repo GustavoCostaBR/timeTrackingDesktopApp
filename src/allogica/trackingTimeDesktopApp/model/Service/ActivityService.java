@@ -62,10 +62,30 @@ public class ActivityService {
 		return activity;
 	}
 	
+	public Activity addActivityStartService(Activity activity) {
+		ActivityStart newStart = new ActivityStart(activity, LocalDateTime.now());
+		activity.addStart(newStart);
+		saveService(activity, newStart);
+		return activity;
+	}
+	
 	public void deleteActivityEndService(Activity activity, ActivityEnd activityEnd) {
 		activity.deleteActivityEnd(activityEnd);
 		daoEnd.delete(activityEnd);
 		saveService(activity);
+	}
+	
+	public Activity addActivityEndService(Activity activity, ActivityEnd activityEnd) {
+		activity.addEnd(activityEnd);
+		saveService(activity, activityEnd);
+		return activity;
+	}
+	
+	public Activity addActivityEndService(Activity activity) {
+		ActivityEnd newEnd = new ActivityEnd(activity, LocalDateTime.now());
+		activity.addEnd(newEnd);
+		saveService(activity, newEnd);
+		return activity;
 	}
 
 	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
