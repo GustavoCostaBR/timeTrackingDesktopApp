@@ -10,7 +10,15 @@ public class TimeInterval {
     private LocalDateTime start;
     private LocalDateTime end;
 
-    public TimeInterval(LocalDateTime start, LocalDateTime end) {
+    public LocalDateTime getStart() {
+		return start;
+	}
+
+	public LocalDateTime getEnd() {
+		return end;
+	}
+
+	public TimeInterval(LocalDateTime start, LocalDateTime end) {
         this.start = start;
         this.end = end;
     }
@@ -19,6 +27,7 @@ public class TimeInterval {
         this.start = start;
         this.end = start.with(LocalTime.MAX);
     }
+    
     
     public Duration intervalDuration() {
     	Duration intervDur = Duration.between(start, end);
@@ -42,6 +51,24 @@ public class TimeInterval {
 			interval.add(new TimeInterval(beginingOfInterval.get(i), endingOfInterval.get(i+1)));
     }
     	return interval;
+    }
+    
+    public static TimeInterval checksIfListContainsThatStart(List<TimeInterval> intervals, LocalDateTime startTime) {
+    	for (TimeInterval interval : intervals) {
+    		if (interval.contains(startTime)){
+    			return interval;
+    		}
+    	}
+    	return null;
+    }
+    
+    public static TimeInterval checksIfListContainsThatInterval(List<TimeInterval> intervals, LocalDateTime startTime, LocalDateTime endTime) {
+    	for (TimeInterval interval : intervals) {
+    		if (interval.contains(startTime) && interval.contains(endTime)){
+    			return interval;
+    		}
+    	}
+    	return null;
     }
     
     public static List<TimeInterval> removeIntervalLessThan(List<TimeInterval> intervalList, Duration intervDur) {

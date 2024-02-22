@@ -4,9 +4,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.text.StyledEditorKit.BoldAction;
 
 import org.hibernate.SessionFactory;
 
@@ -68,13 +71,13 @@ public class ActivityService {
 		return activity;
 	}
 	
-	public void checkIntervalAvailability(LocalDate dayInput) {
+	public List<TimeInterval> checkIntervalAvailability(LocalDate dayInput, Duration minInterval) throws CompromisedDataBaseException {
 		List <ActivityEnd> ends = daoEnd.findByDateRange(ActivityEnd.class, dayInput, dayInput.plusDays(1));
 		List <ActivityStart> starts = daoStart.findByDateRange(ActivityStart.class, dayInput, dayInput.plusDays(1));
 		Boolean startOfDay = false;
 		Boolean endOfDay = false;
-		LocalDateTime temporaryStart;
-		LocalDateTime temporaryEnd;
+		LocalDateTime temporaryStart = null;
+		LocalDateTime temporaryEnd = null;
 //		Checking if there wasn't a activity that started in one day and stopped in other
 		if (ends.get(0).getActivity().getId() != starts.get(0).getActivity().getId()) {
 			if (starts.get(0).getTime().isAfter(ends.get(0).getTime())) {
@@ -88,7 +91,7 @@ public class ActivityService {
 				temporaryStart = starts.get(starts.size()-1).getTime();
 				starts.remove(starts.size()-1);
 				endOfDay = true;
-		}
+		}}
 		if (starts.size() != ends.size()) {
 			throw new CompromisedDataBaseException("The number of Ends and Starts for a specific day should match after corrections, it is not the case. Verify the date " + dayInput);
 		}
@@ -100,7 +103,7 @@ public class ActivityService {
 		for (ActivityStart start : starts) {
 			startsTime.add(start.getTime());
 		}
-		List <TimeInterval> interval;
+		List <TimeInterval> interval = new ArrayList<TimeInterval>();
 		if (!(startOfDay)) {
 			if (!(endOfDay)) {
 //				Beginning of the day until the first start
@@ -119,19 +122,25 @@ public class ActivityService {
 	}
 		else {
 			if (!(endOfDay)) {
-				interval = TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime);
-				interval.add(new TimeInterval(startsTime.get(startsTime.size()-1)));
-				}
-			}
+//				From the removed end until the first start
+				interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
+				interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+//				Last end until the ending of the day
+				interval.add(new TimeInterval(endsTime.get(endsTime.size()-1), endsTime.get(0).with(LocalTime.MAX)));
+}
 			else {
-				for (int i = 0; i < starts.size() - 1; i++) {
-					interval.add(new TimeInterval(endsTime.get(i), startsTime.get(i+1)));
+//				From the removed end until the first start
+				interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
+				interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+//				Last end until the removed start
+				interval.add(new TimeInterval(endsTime.get(endsTime.size()-1), temporaryStart));
 			}
-				interval.add(new TimeInterval(startsTime.get(startsTime.size()-1), startsTime.get(startsTime.size()-1).with(LocalTime.MAX)));	
 		}
+		TimeInterval.removeIntervalLessThan(interval, minInterval);
+		return interval;
 		}
 			
-		}
+	
 	
 	public void deleteActivityStartService(Activity activity, ActivityStart activityStart) {
 		activity.deleteActivityStart(activityStart);
@@ -139,9 +148,11 @@ public class ActivityService {
 		saveService(activity);
 	}
 	
-	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart) throws ThereIsNoEndException, ThereIsNoStartException {
+	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart, Duration minInterval, ActivityEnd activityEnd) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
 		Activity currentActivity = dao.findByProperty(Activity.class, "current", true).get(0);
+//		If the currentActivity is already finished
 		if (currentActivity.getActivityEndCount() == currentActivity.getActivityStartCount()) {
+//		If the new activity being added manually starts after the end of the currentActivity
 			if (activityTimeStart.getTime().isAfter(currentActivity.getLastEnd().getTime())) {
 				stopsCurrentActivityService(false);
 				activity.addStart(activityTimeStart);
@@ -149,6 +160,7 @@ public class ActivityService {
 				saveService(activity, (ActivityStart)activityTimeStart);
 				return activity;
 			}
+//		If the new activity being added manually starts after the last start of the currentActivity
 			else if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				deleteActivityEndService(currentActivity, currentActivity.getLastEnd());
 				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
@@ -159,7 +171,9 @@ public class ActivityService {
 				return activity;
 		}	
 		}
+//		If the currentActivity is not already done and has to be ended
 		else if ((currentActivity.getActivityEndCount() + 1) == currentActivity.getActivityStartCount()) {
+//		If the new activity being added manually starts after the last start of the currentActivity
 			if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
 				stopsCurrentActivityService(false);
@@ -169,13 +183,33 @@ public class ActivityService {
 				return activity;
 		}	
 		}
+		List<TimeInterval> intervals =  checkIntervalAvailability(activityTimeStart.getTime().toLocalDate(), minInterval);
+		TimeInterval answer = null;
+		Boolean checker = false;
+		if (activityEnd == null) {
+		answer = TimeInterval.checksIfListContainsThatStart(intervals, activityTimeStart.getTime());
+		}
+		else {
+			answer = TimeInterval.checksIfListContainsThatInterval(intervals, activityTimeStart.getTime(), activityEnd.getTime());
+			checker = true;
+		}
+		if (answer != null){
+			activity.addStart(activityTimeStart);
+			if (checker == false) {
+				activityEnd = new ActivityEnd(activity, answer.getEnd());
+			}
+			activity.addEnd(activityEnd);
+			saveService(activity, (ActivityStart)activityTimeStart, activityEnd);
+		}
 		return activity;
-//		if ()
-//		super.findByProperty(Activity.class, "current", true);
-//		activity.addStart(activityStart);
-//		saveService(activity, activityStart);
-//		return activity;
 	}	
+	
+	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart, Duration minInterval) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
+		activity = addActivityStartService(activity, activityTimeStart, minInterval, null);
+		return activity;
+	}
+	
+	
 	public Activity addActivityStartService(Activity activity) {
 //		If the is use, I will get the activity that got stopped
 		ActivityStart newStart;
