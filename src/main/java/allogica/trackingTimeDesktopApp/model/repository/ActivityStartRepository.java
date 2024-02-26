@@ -4,5 +4,4 @@ import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 
 public interface ActivityStartRepository extends ActivityGenericTimeRepository<ActivityStart> {
 	
-	
 }

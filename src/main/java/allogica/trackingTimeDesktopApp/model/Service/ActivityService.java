@@ -7,8 +7,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,9 +33,6 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class ActivityService {
-	private ActivityRepository dao;
-	private ActivityEndRepository daoEnd;
-	private ActivityStartRepository daoStart;
 
 	@Autowired
 	private ActivityRepository activityRepository;
@@ -316,8 +313,30 @@ public class ActivityService {
 		return activity;
 	}
 	
+	
+	public List<LocalDateTime> findActivityStartTimesBetween(LocalDateTime dayInput, LocalDateTime dayInput2) {
+		LocalDateTime startDate = dayInput;
+		LocalDateTime endDate = dayInput2;
+		return entityManager.createQuery(
+				"SELECT as.time FROM ActivityStart as WHERE as.time BETWEEN :startDate AND :endDate ORDER BY as.time ASC",
+				LocalDateTime.class).setParameter("startDate", startDate).setParameter("endDate", endDate)
+				.getResultList();
+	}
+	
+	public List<LocalDateTime> findActivityEndTimesBetween(LocalDateTime dayInput, LocalDateTime dayInput2) {
+		LocalDateTime startDate = dayInput;
+		LocalDateTime endDate = dayInput2;
+		return entityManager.createQuery(
+				"SELECT as.time FROM ActivityEnd as WHERE as.time BETWEEN :startDate AND :endDate ORDER BY as.time ASC",
+				LocalDateTime.class).setParameter("startDate", startDate).setParameter("endDate", endDate)
+				.getResultList();
+	}
+	
 	@Transactional
 	public List<TimeInterval> checkIntervalAvailability(LocalDate dayInput, Duration minInterval) throws CompromisedDataBaseException {
+//		List <LocalDateTime> ends = findActivityEndTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
+//		List <LocalDateTime> starts = findActivityStartTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
+		
 		List <ActivityEnd> ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 		List <ActivityStart> starts = activityStartRepository.findByTimeBetweenOrderByTimeAsc(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 		Boolean startOfDay = false;
@@ -387,20 +406,36 @@ public class ActivityService {
 		}
 			
 	
-	
 	public void deleteActivityStartService(Activity activity, ActivityStart activityStart) {
 		activity.deleteActivityStart(activityStart);
-		daoStart.delete(activityStart);
+		activityStartRepository.delete(activityStart);
 		saveService(activity);
 	}
 	
+	public Activity getCurrentActvityService() throws ActivityNotFoundException {
+		Optional<Activity> activity = activityRepository.findCurrentActivity();
+		return activity.orElseThrow(() -> new ActivityNotFoundException());
+	}
+	
 	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart, Duration minInterval, ActivityEnd activityEnd) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
-		Activity currentActivity = dao.findByProperty(Activity.class, "current", true).get(0);
+		Activity currentActivity;
+		try {
+			currentActivity = getCurrentActvityService();
+		} catch (ActivityNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
 //		If the currentActivity is already finished
 		if (currentActivity.getActivityEndCount() == currentActivity.getActivityStartCount()) {
 //		If the new activity being added manually starts after the end of the currentActivity
 			if (activityTimeStart.getTime().isAfter(currentActivity.getLastEnd().getTime())) {
-				stopsCurrentActivityService(false);
+				try {
+					stopsCurrentActivityService(false);
+				} catch (ActivityNotFoundException e) {
+					e.printStackTrace();
+					return null;
+				}
 				activity.addStart(activityTimeStart);
 				activity.setCurrent(true);
 				saveService(activity, (ActivityStart)activityTimeStart);
@@ -410,7 +445,13 @@ public class ActivityService {
 			else if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				deleteActivityEndService(currentActivity, currentActivity.getLastEnd());
 				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
-				stopsCurrentActivityService(false);
+				try {
+					stopsCurrentActivityService(false);
+				} catch (ActivityNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return null;
+				}
 				activity.addStart(activityTimeStart);
 				activity.setCurrent(true);
 				saveService(activity, (ActivityStart)activityTimeStart);
@@ -422,7 +463,13 @@ public class ActivityService {
 //		If the new activity being added manually starts after the last start of the currentActivity
 			if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
-				stopsCurrentActivityService(false);
+				try {
+					stopsCurrentActivityService(false);
+				} catch (ActivityNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return null;
+				}
 				activity.addStart(activityTimeStart);
 				activity.setCurrent(true);
 				saveService(activity, (ActivityStart)activityTimeStart);
@@ -464,17 +511,21 @@ public class ActivityService {
 			activity.addStart(newStart);
 			activity.setCurrent(true);
 			saveService(activity, newStart);
-			return activity;
 		} catch (ThereIsNoEndException e) {
 			System.out.println("Serious. It's not supposed to happen! The problem happend in the addActivityStartService");
 			e.printStackTrace();
+			return null;
+		} catch (ActivityNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
 		}
 		return activity;
 	}
 	
 	public void deleteActivityEndService(Activity activity, ActivityEnd activityEnd) {
 		activity.deleteActivityEnd(activityEnd);
-		daoEnd.delete(activityEnd);
+		activityEndRepository.delete(activityEnd);
 		saveService(activity);
 	}
 	
