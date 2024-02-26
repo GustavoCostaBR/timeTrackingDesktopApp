@@ -1,4 +1,4 @@
-package allogica.trackingTimeDesktopApp.model.dao;
+package allogica.trackingTimeDesktopApp.model.repository;
 
 import java.time.LocalDate;
 import java.util.List;

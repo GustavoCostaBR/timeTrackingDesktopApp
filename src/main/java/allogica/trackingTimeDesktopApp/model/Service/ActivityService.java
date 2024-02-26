@@ -5,19 +5,22 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import allogica.trackingTimeDesktopApp.model.dao.ActivityDAO;
-import allogica.trackingTimeDesktopApp.model.dao.ActivityEndDAO;
-import allogica.trackingTimeDesktopApp.model.dao.ActivityStartDAO;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityTime;
 import allogica.trackingTimeDesktopApp.model.entity.TimeInterval;
+import allogica.trackingTimeDesktopApp.model.repository.ActivityEndDAO;
+import allogica.trackingTimeDesktopApp.model.repository.ActivityRepository;
+import allogica.trackingTimeDesktopApp.model.repository.ActivityStartDAO;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
@@ -25,13 +28,102 @@ import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
 
+@Service
 public class ActivityService {
-	private ActivityDAO dao;
+	private ActivityRepository dao;
 	private ActivityEndDAO daoEnd;
 	private ActivityStartDAO daoStart;
 
+	@Autowired
+	private ActivityRepository activityRepository;
+	
+	public Activity getActivityById(Long id) {
+		return activityRepository.findById(id).orElse(null);
+	}
+	
+	
+	public class TreeNode<T> {
+	    private T data;   
+		private List<TreeNode<T>> children;
+	    private TreeNode<T> parent;
+	    
+	    public T getData() {
+			return data;
+		}
+
+		public void setData(T data) {
+			this.data = data;
+		}
+
+		public List<TreeNode<T>> getChildren() {
+			return children;
+		}
+
+		public void setChildren(List<TreeNode<T>> children) {
+			this.children = children;
+		}
+		
+		public void addChildren(TreeNode<T> child) {
+			this.children.add(child);
+		}
+
+		public TreeNode<T> getParent() {
+			return parent;
+		}
+
+		public void setParent(TreeNode<T> parent) {
+			this.parent = parent;
+		}
+
+		public TreeNode(T data, List<TreeNode<T>> children, TreeNode<T> parent) {
+			this.data = data;
+			this.children = children;
+			this.parent = parent;
+		}
+
+		public TreeNode(List<TreeNode<T>> children, TreeNode<T> parent) {
+			this(null, children, parent);
+		}
+		
+		public TreeNode(List<TreeNode<T>> children) {
+			this(null, children, null);
+		}
+		
+		public TreeNode() {
+			this(null, new ArrayList<>(), null);
+		}
+	    
+	}
+	
+	public TreeNode<Activity> getFirstLevelSubactivities(Long activityId) {
+        TreeNode<Activity> rootNode = null;
+        rootNode = getFirstLevelSubactivities(activityId, rootNode);
+        return rootNode;
+    }
+	
+	public TreeNode<Activity> getFirstLevelSubactivities(Long activityId, TreeNode<Activity> rootNode) {
+        List<Activity> subactivities = activityRepository.findByParentActivityId(activityId);
+        if (rootNode == null) {
+        	rootNode = new TreeNode<>();	
+        }
+        for (Activity subactivity : subactivities) {
+        	TreeNode<Activity> childNode = new TreeNode<>(subactivity, new ArrayList<>(), rootNode);
+            rootNode.addChildren(childNode);
+        }
+        return rootNode;
+    }
+	
+	public TreeNode<Activity> getAllSubactivitiesAsTree(Long activityId) {
+	    TreeNode<Activity> rootNode = getFirstLevelSubactivities(activityId);
+	    // Recursively process each child node separately
+	    for (TreeNode<Activity> child : rootNode.getChildren()) {
+	        child.addChildren(getAllSubactivitiesAsTree(child.getData().getId()));
+	    }
+	    return rootNode;
+	}
+		
 	public ActivityService(SessionFactory sessionFactory) {
-		dao = new ActivityDAO(sessionFactory);
+		dao = new ActivityRepository(sessionFactory);
 		daoEnd = new ActivityEndDAO(sessionFactory);
 		daoStart = new ActivityStartDAO(sessionFactory);
 	}

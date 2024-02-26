@@ -1,4 +1,4 @@
-package allogica.trackingTimeDesktopApp.model.dao;
+package allogica.trackingTimeDesktopApp.model.repository;
 
 import java.lang.reflect.Method;
 import java.util.List;
