@@ -44,6 +44,9 @@ public class ActivityService {
 	private ActivityStartRepository activityStartRepository;
 	
 	@Autowired
+	private ActivityEndRepository activityEndRepository;
+	
+	@Autowired
 	private EntityManager entityManager;
 	
 	public Activity getActivityById(Long id) {
@@ -225,7 +228,7 @@ public class ActivityService {
 	}
 	
 	@Transactional // Ensure transaction management
-	public void changeAddStart(Long activityId, LocalDateTime start) throws ActivityNotFoundException {
+	public void serviceAddStart(Long activityId, LocalDateTime start) throws ActivityNotFoundException {
 	    // Retrieve the activity
 	    Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ActivityNotFoundException(activityId));
 
@@ -242,47 +245,81 @@ public class ActivityService {
 	    activityRepository.save(activity);
 	}
 	
-	public ActivityService(SessionFactory sessionFactory) {
-		dao = new ActivityRepository(sessionFactory);
-		daoEnd = new ActivityEndRepository(sessionFactory);
-		daoStart = new ActivityStartRepository(sessionFactory);
-	}
+	@Transactional // Ensure transaction management
+	public void serviceAddEnd(Long activityId, LocalDateTime end) throws ActivityNotFoundException {
+	    // Retrieve the activity
+	    Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ActivityNotFoundException(activityId));
 
+	    // Create the ActivityStart entity
+	    ActivityEnd subactivityEnd = new ActivityEnd(activity, end);
+
+	    // Save the ActivityStart using its repository
+	    activityEndRepository.save(subactivityEnd);
+
+	    // Update the activity with the start time
+	    activity.addEnd(end);
+
+	    // Save the updated activity
+	    activityRepository.save(activity);
+	}
+	
+	@Transactional // Ensure transaction management
+	public void changeName(Long activityId, String name) throws ActivityNotFoundException {
+	    // Retrieve the activity
+	    Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ActivityNotFoundException(activityId));
+
+	    // Update the name
+	    activity.setName(name);
+
+	    // Save the updated activity
+	    activityRepository.save(activity);
+	}
+	
+	@Transactional // Ensure transaction management
+	public void changeTotalTime(Long activityId, Duration tempo) throws ActivityNotFoundException {
+	    // Retrieve the activity
+	    Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ActivityNotFoundException(activityId));
+
+	    // Update the total time
+	    activity.setTotalTime(tempo);
+
+	    // Save the updated activity
+	    activityRepository.save(activity);
+	}
+	
 	public void saveService(Activity activity) {
-		dao.saveActivity(activity);
+		activityRepository.save(activity);
 	}
 
 	public void saveService(Activity activity, ActivityStart subactivityStart) {
-		dao.saveActivity(activity);
-		daoStart.saveGenericActivityTime(subactivityStart);
+		activityRepository.save(activity);
+		activityStartRepository.save(subactivityStart);
 	}
 
 	public void saveService(Activity activity, ActivityEnd subactivityEnd) {
-		dao.saveActivity(activity);
-		daoEnd.saveGenericActivityTime(subactivityEnd);
+		activityRepository.save(activity);
+		activityEndRepository.save(subactivityEnd);
 	}
 
 	public void saveService(Activity activity, ActivityStart subactivityStart, ActivityEnd subactivityEnd) {
-		dao.saveActivity(activity);
-		daoStart.saveGenericActivityTime(subactivityStart);
-		daoEnd.saveGenericActivityTime(subactivityEnd);
+		activityRepository.save(activity);
+		activityStartRepository.save(subactivityStart);
+		activityEndRepository.save(subactivityEnd);
 	}
 
 	
-	public Activity stopsCurrentActivityService(Boolean state1) {
-		Activity activity = dao.stopsCurrentActivity(state1);
-		try {
-			saveService(activity, activity.getLastEnd());
-		} catch (ThereIsNoEndException e) {
-			System.out.println("Serious. It's not supposed to happen! The problem happend in stopsCurrentActivityService");
-			e.printStackTrace();
+	public Activity stopsCurrentActivityService(Boolean state1) throws ActivityNotFoundException {
+		Activity activity = stopCurrentActivity(state1);
+		if (activity == null) {
+			throw new ActivityNotFoundException();
 		}
 		return activity;
 	}
 	
+	@Transactional
 	public List<TimeInterval> checkIntervalAvailability(LocalDate dayInput, Duration minInterval) throws CompromisedDataBaseException {
-		List <ActivityEnd> ends = daoEnd.findByDateRange(ActivityEnd.class, dayInput, dayInput.plusDays(1));
-		List <ActivityStart> starts = daoStart.findByDateRange(ActivityStart.class, dayInput, dayInput.plusDays(1));
+		List <ActivityEnd> ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
+		List <ActivityStart> starts = activityStartRepository.findByTimeBetweenOrderByTimeAsc(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 		Boolean startOfDay = false;
 		Boolean endOfDay = false;
 		LocalDateTime temporaryStart = null;

@@ -12,4 +12,8 @@ public class ActivityNotFoundException extends Exception {
 	public ActivityNotFoundException(Long Id) {
 		super("Activity Id = " + Id + " was not found.");
 	}
+	
+	public ActivityNotFoundException() {
+		super("Activity was not found.");
+	}
 }
