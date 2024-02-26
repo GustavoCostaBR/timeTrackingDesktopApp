@@ -17,10 +17,11 @@ import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityTime;
 import allogica.trackingTimeDesktopApp.model.entity.TimeInterval;
-import allogica.trackingTimeDesktopApp.model.repository.ActivityEndDAO;
+import allogica.trackingTimeDesktopApp.model.repository.ActivityEndRepository;
 import allogica.trackingTimeDesktopApp.model.repository.ActivityRepository;
-import allogica.trackingTimeDesktopApp.model.repository.ActivityStartDAO;
+import allogica.trackingTimeDesktopApp.model.repository.ActivityStartRepository;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
+import allogica.trackingTimeDesktoppApp.exceptions.ActivityNotFoundException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
@@ -33,11 +34,14 @@ import jakarta.transaction.Transactional;
 @Service
 public class ActivityService {
 	private ActivityRepository dao;
-	private ActivityEndDAO daoEnd;
-	private ActivityStartDAO daoStart;
+	private ActivityEndRepository daoEnd;
+	private ActivityStartRepository daoStart;
 
 	@Autowired
 	private ActivityRepository activityRepository;
+	
+	@Autowired
+	private ActivityStartRepository activityStartRepository;
 	
 	@Autowired
 	private EntityManager entityManager;
@@ -213,11 +217,35 @@ public class ActivityService {
 	    return activity;
 	}
 	
+	@Transactional // Ensure transaction management
+	public void changeDescription(Long activityId, String description) throws ActivityNotFoundException {
+	    Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ActivityNotFoundException(activityId));
+	    activity.setDescription(description);
+	    activityRepository.save(activity);
+	}
+	
+	@Transactional // Ensure transaction management
+	public void changeAddStart(Long activityId, LocalDateTime start) throws ActivityNotFoundException {
+	    // Retrieve the activity
+	    Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ActivityNotFoundException(activityId));
+
+	    // Create the ActivityStart entity
+	    ActivityStart subactivityStart = new ActivityStart(activity, start);
+
+	    // Save the ActivityStart using its repository
+	    activityStartRepository.save(subactivityStart);
+
+	    // Update the activity with the start time
+	    activity.addStart(start);
+
+	    // Save the updated activity
+	    activityRepository.save(activity);
+	}
 	
 	public ActivityService(SessionFactory sessionFactory) {
 		dao = new ActivityRepository(sessionFactory);
-		daoEnd = new ActivityEndDAO(sessionFactory);
-		daoStart = new ActivityStartDAO(sessionFactory);
+		daoEnd = new ActivityEndRepository(sessionFactory);
+		daoStart = new ActivityStartRepository(sessionFactory);
 	}
 
 	public void saveService(Activity activity) {

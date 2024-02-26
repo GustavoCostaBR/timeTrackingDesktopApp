@@ -99,7 +99,7 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 //	public void changeAddStart(Long activityId, LocalDateTime start) {
 //		Activity activity = super.findById(Activity.class, activityId);
 //		ActivityStart subactivityStart = new ActivityStart(activity, start);
-//		ActivityStartDAO subactivityStartDAO = new ActivityStartDAO(sessionFactory);
+//		ActivityStartRepository subactivityStartDAO = new ActivityStartRepository(sessionFactory);
 //	    subactivityStartDAO.saveGenericActivityTime(subactivityStart);
 //		activity.addEnd(start);		
 //		saveActivity(activity);
