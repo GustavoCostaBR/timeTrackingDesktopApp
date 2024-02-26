@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +26,9 @@ import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 
 @Service
 public class ActivityService {
@@ -36,6 +38,9 @@ public class ActivityService {
 
 	@Autowired
 	private ActivityRepository activityRepository;
+	
+	@Autowired
+	private EntityManager entityManager;
 	
 	public Activity getActivityById(Long id) {
 		return activityRepository.findById(id).orElse(null);
@@ -77,7 +82,7 @@ public class ActivityService {
 
 		public TreeNode(T data, List<TreeNode<T>> children, TreeNode<T> parent) {
 			this.data = data;
-			this.children = children;
+			this.children = children != null ? children : new ArrayList<>();
 			this.parent = parent;
 		}
 
@@ -114,14 +119,101 @@ public class ActivityService {
     }
 	
 	public TreeNode<Activity> getAllSubactivitiesAsTree(Long activityId) {
-	    TreeNode<Activity> rootNode = getFirstLevelSubactivities(activityId);
+		TreeNode<Activity> rootNode = null;
+		rootNode = getAllSubactivitiesAsTree(activityId, rootNode);
+		return rootNode;
+	}
+	
+	public TreeNode<Activity> getAllSubactivitiesAsTree(Long activityId, TreeNode<Activity> rootNode) {
+	    if (rootNode == null) {
+	    	rootNode = getFirstLevelSubactivities(activityId);
+	    }
+	    else {
+	    	rootNode = getFirstLevelSubactivities(activityId, rootNode);
+	    }
 	    // Recursively process each child node separately
 	    for (TreeNode<Activity> child : rootNode.getChildren()) {
-	        child.addChildren(getAllSubactivitiesAsTree(child.getData().getId()));
+	        child.addChildren(getAllSubactivitiesAsTree(child.getData().getId(), child));
 	    }
 	    return rootNode;
 	}
+	
+	
+	
+	@Transactional // Ensure JPA transaction management
+	public void delete(Long activityId, Boolean deleteSubActivities) {
+	    Activity activityToDelete = entityManager.find(Activity.class, activityId);
+	    if (activityToDelete == null) {
+	        return; // Activity not found, nothing to delete
+	    }
+
+	    if (deleteSubActivities) {
+	        deleteActivityRecursively(activityToDelete);
+	    } else {
+	        handleSubActivitiesBeforeDeletion(activityToDelete);
+	        activityRepository.delete(activityToDelete); // Delete the activity itself
+	    }
+	}
+
+	private void deleteActivityRecursively(Activity activity) {
+	    TreeNode<Activity> activityTree = getAllSubactivitiesAsTree(activity.getId()); // Get full sub-tree
+
+	    // Traverse the tree in a post-order traversal (children first, then parent)
+	    for (TreeNode<Activity> child : activityTree.getChildren()) {
+	        deleteActivityRecursively(child.getData()); // Delete child nodes recursively
+	    }
+	    activityRepository.delete(activity); // Delete the activity itself
+	}
+
+	private void handleSubActivitiesBeforeDeletion(Activity activity) {
+	    List<Activity> firstLevelSubActivities = activityRepository.findByParentActivityId(activity.getId());
+
+	    // Check for nested sub-activities
+	    if (firstLevelSubActivities.stream().anyMatch(child -> !child.getSubactivities().isEmpty())) {
+	        throw new IllegalStateException("Cannot delete activity with nested sub-activities");
+	    }
+
+	    // Reassign first-level sub-activities to root
+	    for (Activity subactivity : firstLevelSubActivities) {
+	        subactivity.setParentActivityId(0L);
+	        saveActivity(subactivity); // Update in the database
+	    }
+	}
+	
 		
+	public void saveActivity(Activity activity) {
+        activityRepository.save(activity);  // Saves or updates based on ID
+    }
+	
+	
+	@Transactional // Ensure transaction management
+	public void changeParentActivityId(Long parentActivityId, Long newParentActivityId) {
+	    Query query = entityManager.createQuery("UPDATE Activity a SET a.parentActivityId = :newParentId WHERE a.parentActivityId = :oldParentId");
+	    query.setParameter("newParentId", newParentActivityId);
+	    query.setParameter("oldParentId", parentActivityId);
+	    query.executeUpdate(); // Perform the update
+	}
+	
+	@Transactional // Ensure transaction management
+	public Activity stopCurrentActivity(Boolean state1) {
+	    // Find the current activity
+	    Query query = entityManager.createQuery("SELECT a FROM Activity a WHERE a.current = :state");
+	    query.setParameter("state", true); // Assuming "current" is a boolean flag set to true
+	    Activity activity = (Activity) query.getSingleResult();
+
+		if ((activity.getActivityEndCount() + 1) == activity.getActivityStartCount()) {
+			activity.addEnd(LocalDateTime.now());
+		}
+	    
+	    if (activity != null) {
+	        // Update activity data
+	        activity.setCurrent(state1);
+	        entityManager.merge(activity); // Persist changes
+	    }
+	    return activity;
+	}
+	
+	
 	public ActivityService(SessionFactory sessionFactory) {
 		dao = new ActivityRepository(sessionFactory);
 		daoEnd = new ActivityEndDAO(sessionFactory);
