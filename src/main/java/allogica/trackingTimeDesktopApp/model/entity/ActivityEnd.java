@@ -2,8 +2,8 @@ package allogica.trackingTimeDesktopApp.model.entity;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "subactivity_end")

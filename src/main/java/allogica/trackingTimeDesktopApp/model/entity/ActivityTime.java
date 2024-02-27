@@ -1,11 +1,11 @@
 package allogica.trackingTimeDesktopApp.model.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-public class ActivityTime {
+public abstract class ActivityTime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -7,15 +7,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
@@ -74,31 +74,31 @@ public class Activity {
 	}
 
 	@OneToMany(mappedBy = "activity", cascade = CascadeType.ALL)
-    private List<ActivityTime> activityStarts;
-	public List<ActivityTime> getStart() {
+    private List<ActivityStart> activityStarts;
+	public List<ActivityStart> getStart() {
 		return activityStarts;
 	}
 	public List<LocalDateTime> getStartTime(){
 		List <LocalDateTime> startTime = new ArrayList<LocalDateTime>();
-		for (ActivityTime start :  getStart()) {
+		for (ActivityStart start :  getStart()) {
 			startTime.add(start.getTime());
 		}
 		return startTime;
 	}
-	public ActivityTime getLastStart() throws ThereIsNoStartException {
+	public ActivityStart getLastStart() throws ThereIsNoStartException {
 		int siize = activityStarts.size();
 		if (siize == 0) {
 			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		ActivityTime lastItem = activityStarts.get(siize - 1);
+		ActivityStart lastItem = activityStarts.get(siize - 1);
 		return (lastItem);
 	}
-	public ActivityTime getFirstStart() throws ThereIsNoStartException {
+	public ActivityStart getFirstStart() throws ThereIsNoStartException {
 		int siize = activityStarts.size();
 		if (siize == 0) {
 			throw new ThereIsNoStartException("There is no start for activity " + this.getName() + "with ID = " + this.getId() + ".");
 		}
-		ActivityTime firstItem = activityStarts.get(0);
+		ActivityStart firstItem = activityStarts.get(0);
 		return (firstItem);
 	}
 	public int getActivityStartCount () {
@@ -110,7 +110,7 @@ public class Activity {
 	public void addStart(LocalDateTime start) {
 		activityStarts.add(new ActivityStart(this, start));
 	}
-	public void addStart(ActivityTime start) {
+	public void addStart(ActivityStart start) {
 		activityStarts.add(start);
 	}
 

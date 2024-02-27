@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
-import allogica.trackingTimeDesktopApp.model.entity.ActivityTime;
 import allogica.trackingTimeDesktopApp.model.entity.TimeInterval;
 import allogica.trackingTimeDesktopApp.model.repository.ActivityEndRepository;
 import allogica.trackingTimeDesktopApp.model.repository.ActivityRepository;
@@ -417,7 +416,7 @@ public class ActivityService {
 		return activity.orElseThrow(() -> new ActivityNotFoundException());
 	}
 	
-	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart, Duration minInterval, ActivityEnd activityEnd) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
+	public Activity addActivityStartService(Activity activity, ActivityStart activityStart, Duration minInterval, ActivityEnd activityEnd) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
 		Activity currentActivity;
 		try {
 			currentActivity = getCurrentActvityService();
@@ -429,22 +428,22 @@ public class ActivityService {
 //		If the currentActivity is already finished
 		if (currentActivity.getActivityEndCount() == currentActivity.getActivityStartCount()) {
 //		If the new activity being added manually starts after the end of the currentActivity
-			if (activityTimeStart.getTime().isAfter(currentActivity.getLastEnd().getTime())) {
+			if (activityStart.getTime().isAfter(currentActivity.getLastEnd().getTime())) {
 				try {
 					stopsCurrentActivityService(false);
 				} catch (ActivityNotFoundException e) {
 					e.printStackTrace();
 					return null;
 				}
-				activity.addStart(activityTimeStart);
+				activity.addStart(activityStart);
 				activity.setCurrent(true);
-				saveService(activity, (ActivityStart)activityTimeStart);
+				saveService(activity, activityStart);
 				return activity;
 			}
 //		If the new activity being added manually starts after the last start of the currentActivity
-			else if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
+			else if (activityStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
 				deleteActivityEndService(currentActivity, currentActivity.getLastEnd());
-				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
+				addActivityEndService(currentActivity, activityStart.getTime());
 				try {
 					stopsCurrentActivityService(false);
 				} catch (ActivityNotFoundException e) {
@@ -452,17 +451,17 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				activity.addStart(activityTimeStart);
+				activity.addStart(activityStart);
 				activity.setCurrent(true);
-				saveService(activity, (ActivityStart)activityTimeStart);
+				saveService(activity, (ActivityStart)activityStart);
 				return activity;
 		}	
 		}
 //		If the currentActivity is not already done and has to be ended
 		else if ((currentActivity.getActivityEndCount() + 1) == currentActivity.getActivityStartCount()) {
 //		If the new activity being added manually starts after the last start of the currentActivity
-			if (activityTimeStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
-				addActivityEndService(currentActivity, (ActivityEnd)activityTimeStart);
+			if (activityStart.getTime().isAfter(currentActivity.getLastStart().getTime()))  {
+				addActivityEndService(currentActivity, activityStart.getTime());
 				try {
 					stopsCurrentActivityService(false);
 				} catch (ActivityNotFoundException e) {
@@ -470,34 +469,34 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				activity.addStart(activityTimeStart);
+				activity.addStart(activityStart);
 				activity.setCurrent(true);
-				saveService(activity, (ActivityStart)activityTimeStart);
+				saveService(activity, (ActivityStart)activityStart);
 				return activity;
 		}	
 		}
-		List<TimeInterval> intervals =  checkIntervalAvailability(activityTimeStart.getTime().toLocalDate(), minInterval);
+		List<TimeInterval> intervals =  checkIntervalAvailability(activityStart.getTime().toLocalDate(), minInterval);
 		TimeInterval answer = null;
 		Boolean checker = false;
 		if (activityEnd == null) {
-		answer = TimeInterval.checksIfListContainsThatStart(intervals, activityTimeStart.getTime());
+		answer = TimeInterval.checksIfListContainsThatStart(intervals, activityStart.getTime());
 		}
 		else {
-			answer = TimeInterval.checksIfListContainsThatInterval(intervals, activityTimeStart.getTime(), activityEnd.getTime());
+			answer = TimeInterval.checksIfListContainsThatInterval(intervals, activityStart.getTime(), activityEnd.getTime());
 			checker = true;
 		}
 		if (answer != null){
-			activity.addStart(activityTimeStart);
+			activity.addStart(activityStart);
 			if (checker == false) {
 				activityEnd = new ActivityEnd(activity, answer.getEnd());
 			}
 			activity.addEnd(activityEnd);
-			saveService(activity, (ActivityStart)activityTimeStart, activityEnd);
+			saveService(activity, (ActivityStart)activityStart, activityEnd);
 		}
 		return activity;
 	}	
 	
-	public Activity addActivityStartService(Activity activity, ActivityTime activityTimeStart, Duration minInterval) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
+	public Activity addActivityStartService(Activity activity, ActivityStart activityTimeStart, Duration minInterval) throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
 		activity = addActivityStartService(activity, activityTimeStart, minInterval, null);
 		return activity;
 	}
@@ -532,6 +531,12 @@ public class ActivityService {
 	public Activity addActivityEndService(Activity activity, ActivityEnd activityEnd) {
 		activity.addEnd(activityEnd);
 		saveService(activity, activityEnd);
+		return activity;
+	}
+	
+	public Activity addActivityEndService(Activity activity, LocalDateTime endTime) {
+		activity.addEnd(endTime);
+		saveService(activity);
 		return activity;
 	}
 	
