@@ -4,9 +4,13 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
+import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,11 +18,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
-import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
-import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
 
 @Entity
 @Table(name = "activity")
@@ -32,7 +34,13 @@ public class Activity {
 		return id;
 	}
 
-	@Column(name = "parent_activity_id") // Mapping for the parent activity ID
+	
+//	@Column(name = "parent_activity_id") // Mapping for the parent activity ID
+//	@ManyToOne(fetch = FetchType.LAZY)
+//	@JoinColumn(name = "parent_activity_id")
+//	private Long parentActivityId; // Field to store the parent activity ID
+	
+	@Column(name = "parent_activity_id")
 	private Long parentActivityId; // Field to store the parent activity ID
 
 	public Long getParentActivityId() {
@@ -64,6 +72,24 @@ public class Activity {
 	}
 
 	
+	@ManyToMany
+    private Set<ActivityCategory> activityCategories;
+	
+	
+	
+	public Set<ActivityCategory> getCategories() {
+		return activityCategories;
+	}
+
+	public void setCategories(Set<ActivityCategory> categories) {
+		this.activityCategories = categories;
+	}
+	public void addCategories(ActivityCategory category) {
+		this.activityCategories.add(category);
+	}
+	
+
+
 	@Column(name = "description")
 	private String description;
 	public String getDescription() {
@@ -217,9 +243,13 @@ public class Activity {
 	public Activity(String name) {
 		this.name = name;
 		this.subactivities = new HashMap<>();
-		this.parentActivityId = 0L;
 		this.activityStarts = new ArrayList<>();
         this.activityEnds = new ArrayList<>();
+        this.activityCategories = new HashSet<>();
+	}
+	
+	public Activity() {
+		this("Standard Name");
 	}
 
 //	public Activity(Long parentActivityId, String name, LocalDateTime start) {

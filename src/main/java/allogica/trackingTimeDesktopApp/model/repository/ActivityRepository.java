@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
+import jakarta.transaction.Transactional;
 
 @Repository
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
@@ -16,5 +17,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
 	
 	@Query("SELECT a FROM Activity a WHERE a.current = true")
     Optional<Activity> findCurrentActivity();
+	
+	@Transactional // Ensure transaction management
+    void deleteAll();
 	
 }
