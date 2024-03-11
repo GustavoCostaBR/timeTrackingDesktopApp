@@ -2,6 +2,7 @@ package allogica.trackingTimeDesktopApp.config;
 
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +82,13 @@ public class TestConfig implements CommandLineRunner {
 //			System.out.println(subActivity.getData());
 //		}
 		
-		activityService.getAllSubactivitiesAsTree(activity.getId()).printTreeNode();
+		TreeNode<Activity> activityNode = activityService.getAllSubactivitiesAsTree(activity.getId());
+		activity = activityService.getActivityById(activity.getId());
+		activityNode.setData(activity);
+		
+		activityNode.printTreeNode();
+		
+		
 //		System.out.println(activityService.getFirstLevelSubactivities(31L).getData());
 //		System.out.println(activityService.getFirstLevelSubactivities(activity.getId()).getChildren());
 		System.out.println("Tudo certo por aqui!");

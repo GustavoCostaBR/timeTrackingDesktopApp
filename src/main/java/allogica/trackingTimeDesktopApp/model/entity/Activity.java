@@ -105,11 +105,19 @@ public class Activity {
 				+ usefulTime + "]";
 	}
 	
+	public List<Long> getSubActivitiesIDs(){
+		List<Long> subactivitiesIDs = new ArrayList<>();
+		for (Activity subactivity : getSubactivities()) {
+			subactivitiesIDs.add(subactivity.getId());
+		}
+		return subactivitiesIDs;
+	}
+	
 	public String toString1() {
 		return "Activity [id=" + id + ", parentActivityId=" + parentActivityId + ", name=" + name
 				+ ", activityCategories=" + activityCategories + ", description=" + description + ", activityStarts="
 				+ activityStarts + ", activityEnds=" + activityEnds + ", totalTime=" + totalTime + ", usefulTime="
-				+ usefulTime + ", subactivities=" + subactivities + "]";
+				+ usefulTime + ", subactivities=" + getSubActivitiesIDs() + "]";
 	}
 
 

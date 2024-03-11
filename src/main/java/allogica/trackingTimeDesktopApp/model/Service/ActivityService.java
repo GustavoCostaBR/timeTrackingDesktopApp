@@ -56,6 +56,9 @@ public class ActivityService {
 		Activity activity = activityRepository.findById(id).orElse(null);
 		if (activity != null) {
 			Hibernate.initialize(activity.getCategories());
+			Hibernate.initialize(activity.getStart());
+			Hibernate.initialize(activity.getEnd());
+			Hibernate.initialize(activity.getSubactivities());
 		}
 		return activity;
 
@@ -97,11 +100,11 @@ public class ActivityService {
 		public void printTreeNode() {
 			T data1 = this.getData();
 			if (data1 != null) {
-				System.out.println(data1);
+				System.out.println(((Activity)(data1)).toString1());
 			}
 			List<TreeNode<T>> childreen = this.getChildren();
-			if (childreen != null && !(childreen.isEmpty()) && childreen.size() > 0) {
-				System.out.println(childreen.size());
+			if (childreen != null && !(childreen.isEmpty())) {
+//				System.out.println(childreen.size());
 //				int contador = 0;
 				for (TreeNode<T> subactivity : childreen) {
 //					contador++;
@@ -179,7 +182,7 @@ public class ActivityService {
 				Hibernate.initialize(subactivity.getStart());
 				Hibernate.initialize(subactivity.getEnd());
 //				There is no sense in initializing the subactivities here, this method is not for it.
-//				Hibernate.initialize(subactivity.getSubactivities());
+				Hibernate.initialize(subactivity.getSubactivities());
 			}
 			
 		}
