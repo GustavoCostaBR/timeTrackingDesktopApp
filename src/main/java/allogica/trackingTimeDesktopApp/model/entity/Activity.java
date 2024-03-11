@@ -3,10 +3,8 @@ package allogica.trackingTimeDesktopApp.model.entity;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
@@ -98,6 +96,22 @@ public class Activity {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+
+	@Override
+	public String toString() {
+		return "Activity [id=" + id + ", parentActivityId=" + parentActivityId + ", name=" + name
+				+ ", activityCategories=" + activityCategories + ", description=" + description + ", activityStarts="
+				+ activityStarts + ", activityEnds=" + activityEnds + ", totalTime=" + totalTime + ", usefulTime="
+				+ usefulTime + "]";
+	}
+	
+	public String toString1() {
+		return "Activity [id=" + id + ", parentActivityId=" + parentActivityId + ", name=" + name
+				+ ", activityCategories=" + activityCategories + ", description=" + description + ", activityStarts="
+				+ activityStarts + ", activityEnds=" + activityEnds + ", totalTime=" + totalTime + ", usefulTime="
+				+ usefulTime + ", subactivities=" + subactivities + "]";
+	}
+
 
 	@OneToMany(mappedBy = "activity", cascade = CascadeType.ALL)
     private List<ActivityStart> activityStarts;
@@ -227,22 +241,22 @@ public class Activity {
 	
 	@OneToMany(cascade = CascadeType.ALL) // Specify the cascade type
 	@JoinColumn(name = "parent_activity_id") // Specify the column linking subactivities to their parent
-	private Map<Long, Activity> subactivities;
-	public Map<Long, Activity> getSubactivities() {
+	private List<Activity> subactivities;
+	public List<Activity> getSubactivities() {
 		return subactivities;
 	}
-	public void addSubactivity(Long id, Activity subactivity) {
-		subactivities.put(id, subactivity);
+	public void addSubactivity(Activity subactivity) {
+		subactivities.add(subactivity);
 	}
-	public void setSubActivities(Map<Long, Activity> activities) {
-		for (Map.Entry<Long, Activity> activity : activities.entrySet()) {
-			this.addSubactivity(activity.getKey(), activity.getValue());
+	public void setSubActivities(List<Activity> activities) {
+		for (Activity activity : activities) {
+			this.addSubactivity(activity);
 		}
 	}
 
 	public Activity(String name) {
 		this.name = name;
-		this.subactivities = new HashMap<>();
+		this.subactivities = new ArrayList<>();
 		this.activityStarts = new ArrayList<>();
         this.activityEnds = new ArrayList<>();
         this.activityCategories = new HashSet<>();

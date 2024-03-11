@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.hibernate.Hibernate;
@@ -94,6 +93,34 @@ public class ActivityService {
 		public void setParent(TreeNode<T> parent) {
 			this.parent = parent;
 		}
+		
+		public void printTreeNode() {
+			T data1 = this.getData();
+			if (data1 != null) {
+				System.out.println(data1);
+			}
+			List<TreeNode<T>> childreen = this.getChildren();
+			if (childreen != null && !(childreen.isEmpty()) && childreen.size() > 0) {
+				System.out.println(childreen.size());
+//				int contador = 0;
+				for (TreeNode<T> subactivity : childreen) {
+//					contador++;
+//					System.out.println(contador);
+					subactivity.printTreeNode();
+					
+				}	
+			}
+			
+		}
+		
+		public String toStringChildren() {
+			return "TreeNode [children=" + children + "]";
+		}
+		
+		@Override
+		public String toString() {
+			return "TreeNode [data=" + data + ", children=" + children + ", parent=" + parent + "]";
+		}
 
 		public TreeNode(T data, List<TreeNode<T>> children, TreeNode<T> parent) {
 			this.data = data;
@@ -133,16 +160,28 @@ public class ActivityService {
 		return activityCategory;
 	}
 
+	@Transactional
 	public TreeNode<Activity> getFirstLevelSubactivities(Long activityId) {
 		TreeNode<Activity> rootNode = null;
 		rootNode = getFirstLevelSubactivities(activityId, rootNode);
 		return rootNode;
 	}
 
+	@Transactional
 	public TreeNode<Activity> getFirstLevelSubactivities(Long activityId, TreeNode<Activity> rootNode) {
 		List<Activity> subactivities = activityRepository.findByParentActivityId(activityId);
 		if (rootNode == null) {
 			rootNode = new TreeNode<>();
+		}
+		if (subactivities != null && !(subactivities.isEmpty())){
+			for (Activity subactivity : subactivities) {
+				Hibernate.initialize(subactivity.getCategories());
+				Hibernate.initialize(subactivity.getStart());
+				Hibernate.initialize(subactivity.getEnd());
+//				There is no sense in initializing the subactivities here, this method is not for it.
+//				Hibernate.initialize(subactivity.getSubactivities());
+			}
+			
 		}
 		for (Activity subactivity : subactivities) {
 			TreeNode<Activity> childNode = new TreeNode<>(subactivity, new ArrayList<>(), rootNode);
@@ -151,12 +190,14 @@ public class ActivityService {
 		return rootNode;
 	}
 
+	@Transactional
 	public TreeNode<Activity> getAllSubactivitiesAsTree(Long activityId) {
 		TreeNode<Activity> rootNode = null;
 		rootNode = getAllSubactivitiesAsTree(activityId, rootNode);
 		return rootNode;
 	}
 
+	@Transactional
 	public TreeNode<Activity> getAllSubactivitiesAsTree(Long activityId, TreeNode<Activity> rootNode) {
 		if (rootNode == null) {
 			rootNode = getFirstLevelSubactivities(activityId);
@@ -165,7 +206,8 @@ public class ActivityService {
 		}
 		// Recursively process each child node separately
 		for (TreeNode<Activity> child : rootNode.getChildren()) {
-			child.addChildren(getAllSubactivitiesAsTree(child.getData().getId(), child));
+			child = (this.getAllSubactivitiesAsTree(child.getData().getId(), child));
+//			child.addChildren(getAllSubactivitiesAsTree(child.getData().getId(), child));	
 		}
 		return rootNode;
 	}
@@ -554,8 +596,15 @@ public class ActivityService {
 		return activity;
 	}
 
+	@Transactional
 	public void clearAllActivities() {
-		activityRepository.deleteAll();
+		List <Activity> allActivities = activityRepository.findAll();
+		if (allActivities != null && !(allActivities.isEmpty())){
+			for (Activity activity : allActivities) {
+				delete(activity.getId(), true);
+			}
+		}
+		
 	}
 
 //	To start an activity with time equals to now;
@@ -620,10 +669,10 @@ public class ActivityService {
 			return activity;
 		}
 //		Starting verification of subactivities ends if it is not complete in the activity itself
-		Map<Long, Activity> subactivities = activity.getSubactivities();
+		List<Activity> subactivities = activity.getSubactivities();
 		if (!(subactivities.isEmpty())) {
 			end = LocalDateTime.of(1900, 1, 1, 0, 0);
-			for (Activity subactivity : subactivities.values()) {
+			for (Activity subactivity : subactivities) {
 				LocalDateTime subEnd;
 				try {
 					subEnd = subactivity.getLastEnd().getTime();
@@ -740,7 +789,7 @@ public class ActivityService {
 	}
 
 	public Activity calcUsefulTime(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
-		Map<Long, Activity> subActivities = activity.getSubactivities();
+		List<Activity> subActivities = activity.getSubactivities();
 		List<LocalDateTime> ends = activity.getEndTime();
 		List<LocalDateTime> starts = activity.getStartTime();
 		if (subActivities.isEmpty()) {
@@ -775,7 +824,7 @@ public class ActivityService {
 			}
 		} else {
 			Duration tempUsefulTime = Duration.ZERO;
-			for (Activity subActivity : subActivities.values()) {
+			for (Activity subActivity : subActivities) {
 				subActivity = calcUsefulTime(subActivity);
 				tempUsefulTime = tempUsefulTime.plus(subActivity.getUsefulTime());
 			}
