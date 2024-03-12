@@ -93,7 +93,8 @@ public class TestConfig implements CommandLineRunner {
 //		activityService.saveActivity(subactivity1);
 //		activityService.changeParentActivityId(activity.getId(), null);
 		
-		activityService.delete(activity.getId(), false);
+//		activityService.delete(activity.getId(), false);
+		activityService.delete(subactivity1.getId(), false);
 		
 		
 //		System.out.println(activityService.getFirstLevelSubactivities(31L).getData());

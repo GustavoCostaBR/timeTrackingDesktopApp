@@ -260,7 +260,7 @@ public class ActivityService {
 		for (TreeNode<Activity> childTreeNode : firstLevelSubActivities) {
 //			Ensuring it is an updated item and managed in this session
 			Activity tempSubActivity = getActivityById(childTreeNode.getData().getId());
-			tempSubActivity.setParentActivityId(null);
+			tempSubActivity.setParentActivityId(activity.getParentActivityId());
 //			changeParentActivityId(tempSubActivity.getParentActivityId(), null);
 			saveActivity(tempSubActivity); // Update in the database
 		}
