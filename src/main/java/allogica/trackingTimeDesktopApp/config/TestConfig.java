@@ -88,6 +88,13 @@ public class TestConfig implements CommandLineRunner {
 		
 		activityNode.printTreeNode();
 		
+//		subactivity1 = activityService.getActivityById(subactivity1.getId());
+//		subactivity1.setParentActivityId(null);
+//		activityService.saveActivity(subactivity1);
+//		activityService.changeParentActivityId(activity.getId(), null);
+		
+		activityService.delete(activity.getId(), false);
+		
 		
 //		System.out.println(activityService.getFirstLevelSubactivities(31L).getData());
 //		System.out.println(activityService.getFirstLevelSubactivities(activity.getId()).getChildren());

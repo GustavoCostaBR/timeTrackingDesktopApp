@@ -50,7 +50,7 @@ public class ActivityService {
 
 	@Autowired
 	private EntityManager entityManager;
-
+	
 	@Transactional
 	public Activity getActivityById(Long id) {
 		Activity activity = activityRepository.findById(id).orElse(null);
@@ -217,7 +217,8 @@ public class ActivityService {
 
 	@Transactional // Ensure JPA transaction management
 	public void delete(Long activityId, Boolean deleteSubActivities) {
-		Activity activityToDelete = entityManager.find(Activity.class, activityId);
+//		Activity activityToDelete = entityManager.find(Activity.class, activityId);
+		Activity activityToDelete = getActivityById(activityId);
 		if (activityToDelete == null) {
 			return; // Activity not found, nothing to delete
 		}
@@ -225,11 +226,13 @@ public class ActivityService {
 		if (deleteSubActivities) {
 			deleteActivityRecursively(activityToDelete);
 		} else {
-			handleSubActivitiesBeforeDeletion(activityToDelete);
+			activityToDelete = handleSubActivitiesBeforeDeletion(activityToDelete);
+			
 			activityRepository.delete(activityToDelete); // Delete the activity itself
 		}
 	}
 
+	@Transactional
 	private void deleteActivityRecursively(Activity activity) {
 		TreeNode<Activity> activityTree = getAllSubactivitiesAsTree(activity.getId()); // Get full sub-tree
 
@@ -240,21 +243,34 @@ public class ActivityService {
 		activityRepository.delete(activity); // Delete the activity itself
 	}
 
-	private void handleSubActivitiesBeforeDeletion(Activity activity) {
-		List<Activity> firstLevelSubActivities = activityRepository.findByParentActivityId(activity.getId());
+	@Transactional
+	private Activity handleSubActivitiesBeforeDeletion(Activity activity) {
+		TreeNode<Activity> activityTreeNode = getFirstLevelSubactivities(activity.getId());
+		List<TreeNode<Activity>> firstLevelSubActivities = activityTreeNode.getChildren();
+				
+				
+//		List<Activity> firstLevelSubActivities = activityRepository.findByParentActivityId(activity.getId());
 
 		// Check for nested sub-activities
-		if (firstLevelSubActivities.stream().anyMatch(child -> !child.getSubactivities().isEmpty())) {
-			throw new IllegalStateException("Cannot delete activity with nested sub-activities");
-		}
+//		if (!(firstLevelSubActivities.isEmpty())) {
+//			throw new IllegalStateException("Cannot delete activity with nested sub-activities");
+//		}
 
 		// Reassign first-level sub-activities to root
-		for (Activity subactivity : firstLevelSubActivities) {
-			subactivity.setParentActivityId(0L);
-			saveActivity(subactivity); // Update in the database
+		for (TreeNode<Activity> childTreeNode : firstLevelSubActivities) {
+//			Ensuring it is an updated item and managed in this session
+			Activity tempSubActivity = getActivityById(childTreeNode.getData().getId());
+			tempSubActivity.setParentActivityId(null);
+//			changeParentActivityId(tempSubActivity.getParentActivityId(), null);
+			saveActivity(tempSubActivity); // Update in the database
 		}
+//		Deleting subactivities from the entity
+		activity.deleteAllSubactitivies();
+		return activity;
+		
 	}
 
+	@Transactional
 	public void saveActivity(Activity activity) {
 		activityRepository.save(activity); // Saves or updates based on ID
 	}

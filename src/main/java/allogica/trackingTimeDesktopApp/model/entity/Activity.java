@@ -253,6 +253,11 @@ public class Activity {
 	public List<Activity> getSubactivities() {
 		return subactivities;
 	}
+	
+	public void deleteAllSubactitivies() {
+		subactivities = new ArrayList<Activity>();
+	}
+	
 	public void addSubactivity(Activity subactivity) {
 		subactivities.add(subactivity);
 	}
