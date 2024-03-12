@@ -303,50 +303,21 @@ public class ActivityService {
 		}
 		return activity;
 	}
+	
+	@Transactional
+	public Activity stopsCurrentActivityService(Boolean state1) throws ActivityNotFoundException {
+		Activity activity = stopCurrentActivity(state1);
+		if (activity == null) {
+			throw new ActivityNotFoundException();
+		}
+		return activity;
+	}
 
 	@Transactional // Ensure transaction management
 	public void changeDescription(Long activityId, String description) throws ActivityNotFoundException {
 		Activity activity = activityRepository.findById(activityId)
 				.orElseThrow(() -> new ActivityNotFoundException(activityId));
 		activity.setDescription(description);
-		activityRepository.save(activity);
-	}
-
-	@Transactional // Ensure transaction management
-	public void serviceAddStart(Long activityId, LocalDateTime start) throws ActivityNotFoundException {
-		// Retrieve the activity
-		Activity activity = activityRepository.findById(activityId)
-				.orElseThrow(() -> new ActivityNotFoundException(activityId));
-
-		// Create the ActivityStart entity
-		ActivityStart subactivityStart = new ActivityStart(activity, start);
-
-		// Save the ActivityStart using its repository
-		activityStartRepository.save(subactivityStart);
-
-		// Update the activity with the start time
-		activity.addStart(start);
-
-		// Save the updated activity
-		activityRepository.save(activity);
-	}
-
-	@Transactional // Ensure transaction management
-	public void serviceAddEnd(Long activityId, LocalDateTime end) throws ActivityNotFoundException {
-		// Retrieve the activity
-		Activity activity = activityRepository.findById(activityId)
-				.orElseThrow(() -> new ActivityNotFoundException(activityId));
-
-		// Create the ActivityStart entity
-		ActivityEnd subactivityEnd = new ActivityEnd(activity, end);
-
-		// Save the ActivityStart using its repository
-		activityEndRepository.save(subactivityEnd);
-
-		// Update the activity with the start time
-		activity.addEnd(end);
-
-		// Save the updated activity
 		activityRepository.save(activity);
 	}
 
@@ -375,6 +346,62 @@ public class ActivityService {
 		// Save the updated activity
 		activityRepository.save(activity);
 	}
+	
+	@Transactional // Ensure transaction management
+	public Activity addStart(Long activityId, LocalDateTime start) throws ActivityNotFoundException {
+		// Retrieve the activity
+		Activity activity = activityRepository.findById(activityId)
+				.orElseThrow(() -> new ActivityNotFoundException(activityId));
+
+		// Create the ActivityStart entity
+		ActivityStart subactivityStart = new ActivityStart(activity, start);
+
+		// Save the ActivityStart using its repository
+		activityStartRepository.save(subactivityStart);
+
+		// Update the activity with the start time
+		activity.addStart(start);
+
+		// Save the updated activity
+		activityRepository.save(activity);
+		return activity;
+	}
+	
+	@Transactional // Ensure transaction management
+	public Activity addStart(Activity activity, ActivityStart start) throws ActivityNotFoundException {
+		// Save the ActivityStart using its repository
+		activityStartRepository.save(start);
+
+		// Update the activity with the start time
+		activity.addStart(start);
+		
+		activity.setCurrent(true);
+
+		// Save the updated activity
+		activityRepository.save(activity);
+		return activity;
+	}
+
+	@Transactional // Ensure transaction management
+	public Activity addEnd(Long activityId, LocalDateTime end) throws ActivityNotFoundException {
+		// Retrieve the activity
+		Activity activity = activityRepository.findById(activityId)
+				.orElseThrow(() -> new ActivityNotFoundException(activityId));
+
+		// Create the ActivityStart entity
+		ActivityEnd subactivityEnd = new ActivityEnd(activity, end);
+
+		// Save the ActivityStart using its repository
+		activityEndRepository.save(subactivityEnd);
+
+		// Update the activity with the start time
+		activity.addEnd(end);
+
+		// Save the updated activity
+		activityRepository.save(activity);
+		return activity;
+	}
+
 
 	public void saveService(ActivityCategory activityCategory) {
 		activityCategoryRepository.save(activityCategory);
@@ -400,14 +427,6 @@ public class ActivityService {
 		activityEndRepository.save(subactivityEnd);
 	}
 
-	public Activity stopsCurrentActivityService(Boolean state1) throws ActivityNotFoundException {
-		Activity activity = stopCurrentActivity(state1);
-		if (activity == null) {
-			throw new ActivityNotFoundException();
-		}
-		return activity;
-	}
-
 	public List<LocalDateTime> findActivityStartTimesBetween(LocalDateTime dayInput, LocalDateTime dayInput2) {
 		LocalDateTime startDate = dayInput;
 		LocalDateTime endDate = dayInput2;
@@ -428,7 +447,7 @@ public class ActivityService {
 
 	@Transactional
 	public List<TimeInterval> checkIntervalAvailability(LocalDate dayInput, Duration minInterval)
-			throws CompromisedDataBaseException {
+			throws CompromisedDataBaseException, ThereIsNoStartException, ActivityNotFoundException {
 //		List <LocalDateTime> ends = findActivityEndTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 //		List <LocalDateTime> starts = findActivityStartTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 
@@ -440,6 +459,19 @@ public class ActivityService {
 		Boolean endOfDay = false;
 		LocalDateTime temporaryStart = null;
 		LocalDateTime temporaryEnd = null;
+//		Boolean markerIfInputDayIsToday = false;
+//		Checking if the current activity is finished before checking:
+		Activity currentActivity = getCurrentActvityService();
+		
+		
+		if (currentActivity.getLastStart().getTime().toLocalDate().isEqual(dayInput)) {
+			if (currentActivity.getActivityStartCount() == currentActivity.getActivityEndCount() + 1) {
+				ends.add(new ActivityEnd(currentActivity, LocalDateTime.now()));
+//				markerIfInputDayIsToday = true;
+			}
+			
+		}
+		
 //		Checking if there wasn't a activity that started in one day and stopped in other
 		if (ends.get(0).getActivity().getId() != starts.get(0).getActivity().getId()) {
 			if (starts.get(0).getTime().isAfter(ends.get(0).getTime())) {
@@ -455,6 +487,19 @@ public class ActivityService {
 				endOfDay = true;
 			}
 		}
+		int counter1 = 0;
+		int counter2 = 0;
+		for (ActivityStart start : starts) {
+			System.out.println("The start number" + counter1 + " starts at: " + start.getTime());
+			counter1++;
+		}
+		
+		for (ActivityEnd end : ends) {
+			System.out.println("The end number" + counter2 + " ends at: " + end.getTime());
+			counter2++;
+		}
+		
+		
 		if (starts.size() != ends.size()) {
 			throw new CompromisedDataBaseException(
 					"The number of Ends and Starts for a specific day should match after corrections, it is not the case. Verify the date "
@@ -527,9 +572,10 @@ public class ActivityService {
 		return activity.orElseThrow(() -> new ActivityNotFoundException());
 	}
 
+	@Transactional
 	public Activity addActivityStartService(Activity activity, ActivityStart activityStart, Duration minInterval,
 			ActivityEnd activityEnd)
-			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
+			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException, ActivityNotFoundException {
 		Activity currentActivity;
 		try {
 			currentActivity = getCurrentActvityService();
@@ -548,9 +594,12 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				activity.addStart(activityStart);
-				activity.setCurrent(true);
-				saveService(activity, activityStart);
+				
+				activity = addStart(activity, activityStart);
+				
+//				activity.addStart(activityStart);
+//				activity.setCurrent(true);
+//				saveService(activity, activityStart);
 				return activity;
 			}
 //		If the new activity being added manually starts after the last start of the currentActivity
@@ -564,9 +613,11 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				activity.addStart(activityStart);
-				activity.setCurrent(true);
-				saveService(activity, (ActivityStart) activityStart);
+				activity = addStart(activity, activityStart);
+				
+//				activity.addStart(activityStart);
+//				activity.setCurrent(true);
+//				saveService(activity, (ActivityStart) activityStart);
 				return activity;
 			}
 		}
@@ -582,13 +633,17 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				activity.addStart(activityStart);
-				activity.setCurrent(true);
-				saveService(activity, (ActivityStart) activityStart);
+				
+				activity = addStart(activity, activityStart);
+//				activity.addStart(activityStart);
+//				activity.setCurrent(true);
+//				saveService(activity, (ActivityStart) activityStart);
 				return activity;
 			}
 		}
+//		Any other situation is leading the program to check interval availability;
 		List<TimeInterval> intervals = checkIntervalAvailability(activityStart.getTime().toLocalDate(), minInterval);
+		TimeInterval.printTimeInterval(intervals);
 		TimeInterval answer = null;
 		Boolean checker = false;
 		if (activityEnd == null) {
@@ -604,13 +659,16 @@ public class ActivityService {
 				activityEnd = new ActivityEnd(activity, answer.getEnd());
 			}
 			activity.addEnd(activityEnd);
-			saveService(activity, (ActivityStart) activityStart, activityEnd);
+			saveService(activity);
+			
+//			saveService(activity, (ActivityStart) activityStart, activityEnd);
 		}
 		return activity;
 	}
 
+	@Transactional
 	public Activity addActivityStartService(Activity activity, ActivityStart activityTimeStart, Duration minInterval)
-			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException {
+			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException, ActivityNotFoundException {
 		activity = addActivityStartService(activity, activityTimeStart, minInterval, null);
 		return activity;
 	}
@@ -628,15 +686,16 @@ public class ActivityService {
 
 //	To start an activity with time equals to now;
 	@Transactional
-	public Activity addActivityStartService(Activity activity) {
+	public Activity addActivityStartService(Activity activity) throws ThereIsNoStartException, CompromisedDataBaseException {
 		ActivityStart newStart;
 		try {
-			Activity oldActivity = stopsCurrentActivityService(false);
+			Activity oldActivity = stopsCurrentActivityService(true);
 			newStart = new ActivityStart(activity, oldActivity.getLastEnd().getTime());
-			activity.addStart(newStart);
-			activity.setCurrent(true);
+			addActivityStartService(activity, newStart, null);
+//			activity.addStart(newStart);
+//			activity.setCurrent(true);
 //			Only saving activity by cascading it saves also the activity start
-			saveService(activity);
+//			saveService(activity);
 		} catch (ThereIsNoEndException e) {
 			System.out.println(
 					"Serious. It's not supposed to happen! The problem happend in the addActivityStartService");

@@ -71,6 +71,14 @@ public class TimeInterval {
     	return null;
     }
     
+    public static void printTimeInterval(List<TimeInterval> intervals) {
+    	long counter = 0;
+    	for  (TimeInterval interval : intervals) {
+    		System.out.println("The interval number: " + counter + " starts at: " + interval.getStart() + " and ends at " + interval.getEnd() + ";");
+    		counter++;
+    	}
+    }
+    
     public static List<TimeInterval> removeIntervalLessThan(List<TimeInterval> intervalList, Duration intervDur) {
 //    	Remove in the opposite order to not mess the index
     	for (int i = intervalList.size() - 1; i > -1; i--) {

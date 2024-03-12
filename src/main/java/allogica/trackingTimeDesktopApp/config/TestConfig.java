@@ -1,6 +1,7 @@
 package allogica.trackingTimeDesktopApp.config;
 
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -14,6 +15,8 @@ import allogica.trackingTimeDesktopApp.model.Service.ActivityService;
 import allogica.trackingTimeDesktopApp.model.Service.ActivityService.TreeNode;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityCategory;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
+import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 
 @Configuration
 @Profile("test")
@@ -39,30 +42,37 @@ public class TestConfig implements CommandLineRunner {
 		Activity activity = new Activity("Trabalho de Casa");
 		activity.addStart(LocalDateTime.now());
 		activityService.createFirstActivity(activity);
-		Activity activity2 = new Activity("Tema");
-		activityService.addActivityStartService(activity2);
-		Activity activity3 = new Activity("Tema da escola");
-		ActivityCategory learning = activityService.createActivityCategoriesService("Learning");
-		activity3.addCategories(learning);
-		activityService.addActivityStartService(activity3);
-		activity = activityService.getActivityById(activity.getId());
-		activity.addCategories(learning);
-		activityService.saveService(activity);
-		Activity subactivity1 = new Activity("Tema de matemática");
-		subactivity1.setParentActivityId(activity.getId());
-		subactivity1.addCategories(learning);
-		activityService.addActivityStartService(subactivity1);
 		
+		Activity activityTest1 = new Activity("Tarefa do dia anterior");
+		ActivityStart activityStartTest1 = new ActivityStart(activityTest1, LocalDateTime.now().minusDays(1));
+		ActivityEnd activityEndTest1 = new ActivityEnd(activityTest1, LocalDateTime.now().minusHours(15));
+		activityService.addActivityStartService(activityTest1, activityStartTest1, Duration.ofMinutes(3), activityEndTest1);
 		
-		Activity subactivity2 = new Activity("Questão 1 do Tema de matemática");
-		subactivity2.setParentActivityId(subactivity1.getId());
-		subactivity2.addCategories(learning);
-		activityService.addActivityStartService(subactivity2);
-		
-		Activity subactivity2a = new Activity("Subquestão A da questão 1 do Tema de matemática");
-		subactivity2a.setParentActivityId(subactivity2.getId());
-		subactivity2a.addCategories(learning);
-		activityService.addActivityStartService(subactivity2a);
+//		Activity activity2 = new Activity("Tema");
+//		activityService.addActivityStartService(activity2);
+//		Activity activity3 = new Activity("Tema da escola");
+//		ActivityCategory learning = activityService.createActivityCategoriesService("Learning");
+//		ActivityCategory playing = activityService.createActivityCategoriesService("Playing");
+//		activity3.addCategories(learning);
+//		activityService.addActivityStartService(activity3);
+//		activity = activityService.getActivityById(activity.getId());
+//		activity.addCategories(learning);
+//		activityService.saveService(activity);
+//		Activity subactivity1 = new Activity("Tema de matemática");
+//		subactivity1.setParentActivityId(activity.getId());
+//		subactivity1.addCategories(learning);
+//		activityService.addActivityStartService(subactivity1);
+//		
+//		
+//		Activity subactivity2 = new Activity("Questão 1 do Tema de matemática");
+//		subactivity2.setParentActivityId(subactivity1.getId());
+//		subactivity2.addCategories(learning);
+//		activityService.addActivityStartService(subactivity2);
+//		
+//		Activity subactivity2a = new Activity("Subquestão A da questão 1 do Tema de matemática");
+//		subactivity2a.setParentActivityId(subactivity2.getId());
+//		subactivity2a.addCategories(learning);
+//		activityService.addActivityStartService(subactivity2a);
 //		Hibernate.initialize(activity.getCategories());
 //		
 //		for (Activity subactivity : activity.getSubactivities()) {
@@ -82,19 +92,57 @@ public class TestConfig implements CommandLineRunner {
 //			System.out.println(subActivity.getData());
 //		}
 		
-		TreeNode<Activity> activityNode = activityService.getAllSubactivitiesAsTree(activity.getId());
-		activity = activityService.getActivityById(activity.getId());
-		activityNode.setData(activity);
-		
-		activityNode.printTreeNode();
-		
+//		TreeNode<Activity> activityNode = activityService.getAllSubactivitiesAsTree(activity.getId());
+//		activity = activityService.getActivityById(activity.getId());
+//		activityNode.setData(activity);
+//		
+//		activityNode.printTreeNode();
+//		
 //		subactivity1 = activityService.getActivityById(subactivity1.getId());
 //		subactivity1.setParentActivityId(null);
 //		activityService.saveActivity(subactivity1);
 //		activityService.changeParentActivityId(activity.getId(), null);
 		
 //		activityService.delete(activity.getId(), false);
-		activityService.delete(subactivity1.getId(), false);
+//		activityService.delete(subactivity1.getId(), false);
+//		activity = activityService.getActivityById(activity.getId());
+//		activityNode = activityService.getAllSubactivitiesAsTree(activity.getId());
+//		activityNode.setData(activity);
+//		activityNode.printTreeNode();
+//		
+//		activityService.stopsCurrentActivityService(true);
+//		
+//		activityService.changeDescription(activity.getId(), "All working fine here");
+//		activityService.changeDescription(subactivity2.getId(), "Subactivity working as well");
+//		activityService.changeName(subactivity2.getId(), "Change name function is working");
+//		
+//		
+//		
+//		Activity subactivity2b = new Activity("Subquestão b da questão 1 do Tema de matemática");
+//		subactivity2b.setParentActivityId(subactivity2.getId());
+//		subactivity2b.addCategories(learning);
+//		ActivityStart activityStartSubactivity2b = new ActivityStart(subactivity2b, subactivity2a.getLastStart().getTime().plusNanos(10000));
+//		activityService.addActivityStartService(subactivity2b, activityStartSubactivity2b, null);
+//		
+//		subactivity2b.addCategories(playing);
+//		activityService.saveActivity(subactivity2b);
+////		activityService.delete(subactivity2.getId(), false);
+//		
+//		
+//		
+//		Activity subactivity2c = new Activity("Subquestão c da questão 1 do Tema de matemática");
+//		subactivity2c.setParentActivityId(subactivity2.getId());
+//		subactivity2c.addCategories(learning);
+//		ActivityStart activityStartSubactivity2c = new ActivityStart(subactivity2c, subactivity2b.getLastStart().getTime().plusNanos(11000));
+//		activityService.addActivityStartService(subactivity2c, activityStartSubactivity2c, null);
+//		
+//		
+//		Activity subactivity2d = new Activity("Subquestão d da questão 1 do Tema de matemática");
+//		subactivity2d.setParentActivityId(subactivity2.getId());
+//		subactivity2d.addCategories(learning);
+//		ActivityStart activityStartSubactivity2d = new ActivityStart(subactivity2d, subactivity2c.getLastStart().getTime().minusHours(3));
+//		activityService.addActivityStartService(subactivity2d, activityStartSubactivity2d, Duration.ofMinutes(3));
+		
 		
 		
 //		System.out.println(activityService.getFirstLevelSubactivities(31L).getData());
