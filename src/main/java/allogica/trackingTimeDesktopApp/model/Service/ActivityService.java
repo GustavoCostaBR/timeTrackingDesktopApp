@@ -50,7 +50,7 @@ public class ActivityService {
 
 	@Autowired
 	private EntityManager entityManager;
-	
+
 	@Transactional
 	public Activity getActivityById(Long id) {
 		Activity activity = activityRepository.findById(id).orElse(null);
@@ -96,11 +96,11 @@ public class ActivityService {
 		public void setParent(TreeNode<T> parent) {
 			this.parent = parent;
 		}
-		
+
 		public void printTreeNode() {
 			T data1 = this.getData();
 			if (data1 != null) {
-				System.out.println(((Activity)(data1)).toString1());
+				System.out.println(((Activity) (data1)).toString1());
 			}
 			List<TreeNode<T>> childreen = this.getChildren();
 			if (childreen != null && !(childreen.isEmpty())) {
@@ -110,16 +110,16 @@ public class ActivityService {
 //					contador++;
 //					System.out.println(contador);
 					subactivity.printTreeNode();
-					
-				}	
+
+				}
 			}
-			
+
 		}
-		
+
 		public String toStringChildren() {
 			return "TreeNode [children=" + children + "]";
 		}
-		
+
 		@Override
 		public String toString() {
 			return "TreeNode [data=" + data + ", children=" + children + ", parent=" + parent + "]";
@@ -176,7 +176,7 @@ public class ActivityService {
 		if (rootNode == null) {
 			rootNode = new TreeNode<>();
 		}
-		if (subactivities != null && !(subactivities.isEmpty())){
+		if (subactivities != null && !(subactivities.isEmpty())) {
 			for (Activity subactivity : subactivities) {
 				Hibernate.initialize(subactivity.getCategories());
 				Hibernate.initialize(subactivity.getStart());
@@ -184,7 +184,7 @@ public class ActivityService {
 //				There is no sense in initializing the subactivities here, this method is not for it.
 				Hibernate.initialize(subactivity.getSubactivities());
 			}
-			
+
 		}
 		for (Activity subactivity : subactivities) {
 			TreeNode<Activity> childNode = new TreeNode<>(subactivity, new ArrayList<>(), rootNode);
@@ -227,7 +227,7 @@ public class ActivityService {
 			deleteActivityRecursively(activityToDelete);
 		} else {
 			activityToDelete = handleSubActivitiesBeforeDeletion(activityToDelete);
-			
+
 			activityRepository.delete(activityToDelete); // Delete the activity itself
 		}
 	}
@@ -247,8 +247,7 @@ public class ActivityService {
 	private Activity handleSubActivitiesBeforeDeletion(Activity activity) {
 		TreeNode<Activity> activityTreeNode = getFirstLevelSubactivities(activity.getId());
 		List<TreeNode<Activity>> firstLevelSubActivities = activityTreeNode.getChildren();
-				
-				
+
 //		List<Activity> firstLevelSubActivities = activityRepository.findByParentActivityId(activity.getId());
 
 		// Check for nested sub-activities
@@ -267,7 +266,7 @@ public class ActivityService {
 //		Deleting subactivities from the entity
 		activity.deleteAllSubactitivies();
 		return activity;
-		
+
 	}
 
 	@Transactional
@@ -303,7 +302,7 @@ public class ActivityService {
 		}
 		return activity;
 	}
-	
+
 	@Transactional
 	public Activity stopsCurrentActivityService(Boolean state1) throws ActivityNotFoundException {
 		Activity activity = stopCurrentActivity(state1);
@@ -346,7 +345,7 @@ public class ActivityService {
 		// Save the updated activity
 		activityRepository.save(activity);
 	}
-	
+
 	@Transactional // Ensure transaction management
 	public Activity addStart(Long activityId, LocalDateTime start) throws ActivityNotFoundException {
 		// Retrieve the activity
@@ -366,7 +365,7 @@ public class ActivityService {
 		activityRepository.save(activity);
 		return activity;
 	}
-	
+
 	@Transactional // Ensure transaction management
 	public Activity addStart(Activity activity, ActivityStart start) throws ActivityNotFoundException {
 		// Save the ActivityStart using its repository
@@ -374,7 +373,7 @@ public class ActivityService {
 
 		// Update the activity with the start time
 		activity.addStart(start);
-		
+
 		activity.setCurrent(true);
 
 		// Save the updated activity
@@ -401,7 +400,6 @@ public class ActivityService {
 		activityRepository.save(activity);
 		return activity;
 	}
-
 
 	public void saveService(ActivityCategory activityCategory) {
 		activityCategoryRepository.save(activityCategory);
@@ -446,15 +444,17 @@ public class ActivityService {
 	}
 
 	@Transactional
-	public List<TimeInterval> checkIntervalAvailability(LocalDate dayInput, Duration minInterval)
+	public List<TimeInterval> checkIntervalAvailability(LocalDate dayInputStart, LocalDate dayInputEnd,
+			Duration minInterval)
 			throws CompromisedDataBaseException, ThereIsNoStartException, ActivityNotFoundException {
 //		List <LocalDateTime> ends = findActivityEndTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 //		List <LocalDateTime> starts = findActivityStartTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 
-		List<ActivityEnd> ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInput.atStartOfDay(),
-				dayInput.plusDays(1).atStartOfDay());
-		List<ActivityStart> starts = activityStartRepository.findByTimeBetweenOrderByTimeAsc(dayInput.atStartOfDay(),
-				dayInput.plusDays(1).atStartOfDay());
+		List<ActivityEnd> ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(),
+				dayInputEnd.plusDays(1).atStartOfDay());
+		List<ActivityStart> starts = activityStartRepository
+				.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(), dayInputEnd.plusDays(1).atStartOfDay());
+
 		Boolean startOfDay = false;
 		Boolean endOfDay = false;
 		LocalDateTime temporaryStart = null;
@@ -462,85 +462,97 @@ public class ActivityService {
 //		Boolean markerIfInputDayIsToday = false;
 //		Checking if the current activity is finished before checking:
 		Activity currentActivity = getCurrentActvityService();
-		
-		
-		if (currentActivity.getLastStart().getTime().toLocalDate().isEqual(dayInput)) {
-			if (currentActivity.getActivityStartCount() == currentActivity.getActivityEndCount() + 1) {
-				ends.add(new ActivityEnd(currentActivity, LocalDateTime.now()));
-//				markerIfInputDayIsToday = true;
-			}
-			
-		}
-		
-//		Checking if there wasn't a activity that started in one day and stopped in other
-		if (ends.get(0).getActivity().getId() != starts.get(0).getActivity().getId()) {
-			if (starts.get(0).getTime().isAfter(ends.get(0).getTime())) {
-				temporaryEnd = ends.get(ends.size() - 1).getTime();
-				ends.remove(0);
-				startOfDay = true;
-			}
-		}
-		if (starts.get(starts.size() - 1).getActivity().getId() != ends.get(ends.size() - 1).getActivity().getId()) {
-			if (starts.get(starts.size() - 1).getTime().isAfter(ends.get(ends.size() - 1).getTime())) {
-				temporaryStart = starts.get(starts.size() - 1).getTime();
-				starts.remove(starts.size() - 1);
-				endOfDay = true;
-			}
-		}
-		int counter1 = 0;
-		int counter2 = 0;
-		for (ActivityStart start : starts) {
-			System.out.println("The start number" + counter1 + " starts at: " + start.getTime());
-			counter1++;
-		}
-		
-		for (ActivityEnd end : ends) {
-			System.out.println("The end number" + counter2 + " ends at: " + end.getTime());
-			counter2++;
-		}
-		
-		
-		if (starts.size() != ends.size()) {
-			throw new CompromisedDataBaseException(
-					"The number of Ends and Starts for a specific day should match after corrections, it is not the case. Verify the date "
-							+ dayInput);
-		}
-		List<LocalDateTime> endsTime = new ArrayList<LocalDateTime>();
-		List<LocalDateTime> startsTime = new ArrayList<LocalDateTime>();
-		for (ActivityEnd end : ends) {
-			endsTime.add(end.getTime());
-		}
-		for (ActivityStart start : starts) {
-			startsTime.add(start.getTime());
-		}
+//		Boolean thereIsNoActivityMarker = false;
+
 		List<TimeInterval> interval = new ArrayList<TimeInterval>();
-		if (!(startOfDay)) {
-			if (!(endOfDay)) {
-//				Beginning of the day until the first start
-				interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
-				interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
-//				Last end until the ending of the day
-				interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), endsTime.get(0).with(LocalTime.MAX)));
-			} else {
-//				Beginning of the day until the first start
-				interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
-				interval = TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime);
-//				Last end until the removed start
-				interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), temporaryStart));
+
+//		If there is no activity for the selected days
+		if (starts.isEmpty() && ends.isEmpty()) {
+			interval.add(new TimeInterval(dayInputStart.atStartOfDay(), dayInputEnd.atTime(LocalTime.MAX)));
+		}
+//		If there are activities for the selected days
+		else {
+//			Testing to see if the current not finished activity occurs in the same day of the start or end of the new activity
+			if (currentActivity.getLastStart().getTime().toLocalDate().isEqual(dayInputStart)
+					|| currentActivity.getLastStart().getTime().toLocalDate().isEqual(dayInputEnd)) {
+				if (currentActivity.getActivityStartCount() == currentActivity.getActivityEndCount() + 1) {
+					ends.add(new ActivityEnd(currentActivity, LocalDateTime.now()));
+//				markerIfInputDayIsToday = true;
+				}
+
 			}
-		} else {
-			if (!(endOfDay)) {
-//				From the removed end until the first start
-				interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
-				interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+
+//		Checking if there wasn't a activity that started in one day and stopped in other
+			if (ends.get(0).getActivity().getId() != starts.get(0).getActivity().getId()) {
+				if (starts.get(0).getTime().isAfter(ends.get(0).getTime())) {
+					temporaryEnd = ends.get(ends.size() - 1).getTime();
+					ends.remove(0);
+					startOfDay = true;
+				}
+			}
+			if (starts.get(starts.size() - 1).getActivity().getId() != ends.get(ends.size() - 1).getActivity()
+					.getId()) {
+				if (starts.get(starts.size() - 1).getTime().isAfter(ends.get(ends.size() - 1).getTime())) {
+					temporaryStart = starts.get(starts.size() - 1).getTime();
+					starts.remove(starts.size() - 1);
+					endOfDay = true;
+				}
+			}
+			int counter1 = 0;
+			int counter2 = 0;
+			for (ActivityStart start : starts) {
+				System.out.println("The start number" + counter1 + " starts at: " + start.getTime());
+				counter1++;
+			}
+
+			for (ActivityEnd end : ends) {
+				System.out.println("The end number" + counter2 + " ends at: " + end.getTime());
+				counter2++;
+			}
+
+			if (starts.size() != ends.size()) {
+				throw new CompromisedDataBaseException(
+						"The number of Ends and Starts for a specific day should match after corrections, it is not the case. Verify the date "
+								+ dayInputStart);
+			}
+			List<LocalDateTime> endsTime = new ArrayList<LocalDateTime>();
+			List<LocalDateTime> startsTime = new ArrayList<LocalDateTime>();
+			for (ActivityEnd end : ends) {
+				endsTime.add(end.getTime());
+			}
+			for (ActivityStart start : starts) {
+				startsTime.add(start.getTime());
+			}
+			if (!(startOfDay)) {
+				if (!(endOfDay)) {
+//				Beginning of the day until the first start
+					interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
+					interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
 //				Last end until the ending of the day
-				interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), endsTime.get(0).with(LocalTime.MAX)));
-			} else {
-//				From the removed end until the first start
-				interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
-				interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+					interval.add(
+							new TimeInterval(endsTime.get(endsTime.size() - 1), endsTime.get(0).with(LocalTime.MAX)));
+				} else {
+//				Beginning of the day until the first start
+					interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
+					interval = TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime);
 //				Last end until the removed start
-				interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), temporaryStart));
+					interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), temporaryStart));
+				}
+			} else {
+				if (!(endOfDay)) {
+//				From the removed end until the first start
+					interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
+					interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+//				Last end until the ending of the day
+					interval.add(
+							new TimeInterval(endsTime.get(endsTime.size() - 1), endsTime.get(0).with(LocalTime.MAX)));
+				} else {
+//				From the removed end until the first start
+					interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
+					interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
+//				Last end until the removed start
+					interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), temporaryStart));
+				}
 			}
 		}
 		TimeInterval.removeIntervalLessThan(interval, minInterval);
@@ -574,8 +586,8 @@ public class ActivityService {
 
 	@Transactional
 	public Activity addActivityStartService(Activity activity, ActivityStart activityStart, Duration minInterval,
-			ActivityEnd activityEnd)
-			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException, ActivityNotFoundException {
+			ActivityEnd activityEnd) throws ThereIsNoEndException, ThereIsNoStartException,
+			CompromisedDataBaseException, ActivityNotFoundException {
 		Activity currentActivity;
 		try {
 			currentActivity = getCurrentActvityService();
@@ -594,9 +606,9 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				
+
 				activity = addStart(activity, activityStart);
-				
+
 //				activity.addStart(activityStart);
 //				activity.setCurrent(true);
 //				saveService(activity, activityStart);
@@ -614,7 +626,7 @@ public class ActivityService {
 					return null;
 				}
 				activity = addStart(activity, activityStart);
-				
+
 //				activity.addStart(activityStart);
 //				activity.setCurrent(true);
 //				saveService(activity, (ActivityStart) activityStart);
@@ -633,7 +645,7 @@ public class ActivityService {
 					e.printStackTrace();
 					return null;
 				}
-				
+
 				activity = addStart(activity, activityStart);
 //				activity.addStart(activityStart);
 //				activity.setCurrent(true);
@@ -642,7 +654,14 @@ public class ActivityService {
 			}
 		}
 //		Any other situation is leading the program to check interval availability;
-		List<TimeInterval> intervals = checkIntervalAvailability(activityStart.getTime().toLocalDate(), minInterval);
+		List<TimeInterval> intervals;
+		if (activityEnd != null) {
+			intervals = checkIntervalAvailability(activityStart.getTime().toLocalDate(),
+					activityEnd.getTime().toLocalDate(), minInterval);
+		} else {
+			intervals = checkIntervalAvailability(activityStart.getTime().toLocalDate(),
+					activityStart.getTime().toLocalDate(), minInterval);
+		}
 		TimeInterval.printTimeInterval(intervals);
 		TimeInterval answer = null;
 		Boolean checker = false;
@@ -660,7 +679,7 @@ public class ActivityService {
 			}
 			activity.addEnd(activityEnd);
 			saveService(activity);
-			
+
 //			saveService(activity, (ActivityStart) activityStart, activityEnd);
 		}
 		return activity;
@@ -668,25 +687,27 @@ public class ActivityService {
 
 	@Transactional
 	public Activity addActivityStartService(Activity activity, ActivityStart activityTimeStart, Duration minInterval)
-			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException, ActivityNotFoundException {
+			throws ThereIsNoEndException, ThereIsNoStartException, CompromisedDataBaseException,
+			ActivityNotFoundException {
 		activity = addActivityStartService(activity, activityTimeStart, minInterval, null);
 		return activity;
 	}
 
 	@Transactional
 	public void clearAllActivities() {
-		List <Activity> allActivities = activityRepository.findAll();
-		if (allActivities != null && !(allActivities.isEmpty())){
+		List<Activity> allActivities = activityRepository.findAll();
+		if (allActivities != null && !(allActivities.isEmpty())) {
 			for (Activity activity : allActivities) {
 				delete(activity.getId(), true);
 			}
 		}
-		
+
 	}
 
 //	To start an activity with time equals to now;
 	@Transactional
-	public Activity addActivityStartService(Activity activity) throws ThereIsNoStartException, CompromisedDataBaseException {
+	public Activity addActivityStartService(Activity activity)
+			throws ThereIsNoStartException, CompromisedDataBaseException {
 		ActivityStart newStart;
 		try {
 			Activity oldActivity = stopsCurrentActivityService(true);

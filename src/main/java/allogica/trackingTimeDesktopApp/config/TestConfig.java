@@ -45,7 +45,7 @@ public class TestConfig implements CommandLineRunner {
 		
 		Activity activityTest1 = new Activity("Tarefa do dia anterior");
 		ActivityStart activityStartTest1 = new ActivityStart(activityTest1, LocalDateTime.now().minusDays(1));
-		ActivityEnd activityEndTest1 = new ActivityEnd(activityTest1, LocalDateTime.now().minusHours(15));
+		ActivityEnd activityEndTest1 = new ActivityEnd(activityTest1, LocalDateTime.now().minusHours(7));
 		activityService.addActivityStartService(activityTest1, activityStartTest1, Duration.ofMinutes(3), activityEndTest1);
 		
 //		Activity activity2 = new Activity("Tema");
