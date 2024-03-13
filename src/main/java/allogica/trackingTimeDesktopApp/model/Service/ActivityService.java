@@ -409,21 +409,21 @@ public class ActivityService {
 		activityRepository.save(activity);
 	}
 
-	public void saveService(Activity activity, ActivityStart subactivityStart) {
-		activityRepository.save(activity);
-		activityStartRepository.save(subactivityStart);
-	}
+//	public void saveService(Activity activity, ActivityStart subactivityStart) {
+//		activityRepository.save(activity);
+//		activityStartRepository.save(subactivityStart);
+//	}
 
-	public void saveService(Activity activity, ActivityEnd subactivityEnd) {
-		activityRepository.save(activity);
-		activityEndRepository.save(subactivityEnd);
-	}
+//	public void saveService(Activity activity, ActivityEnd subactivityEnd) {
+//		activityRepository.save(activity);
+//		activityEndRepository.save(subactivityEnd);
+//	}
 
-	public void saveService(Activity activity, ActivityStart subactivityStart, ActivityEnd subactivityEnd) {
-		activityRepository.save(activity);
-		activityStartRepository.save(subactivityStart);
-		activityEndRepository.save(subactivityEnd);
-	}
+//	public void saveService(Activity activity, ActivityStart subactivityStart, ActivityEnd subactivityEnd) {
+//		activityRepository.save(activity);
+//		activityStartRepository.save(subactivityStart);
+//		activityEndRepository.save(subactivityEnd);
+//	}
 
 	public List<LocalDateTime> findActivityStartTimesBetween(LocalDateTime dayInput, LocalDateTime dayInput2) {
 		LocalDateTime startDate = dayInput;
@@ -449,11 +449,22 @@ public class ActivityService {
 			throws CompromisedDataBaseException, ThereIsNoStartException, ActivityNotFoundException {
 //		List <LocalDateTime> ends = findActivityEndTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
 //		List <LocalDateTime> starts = findActivityStartTimesBetween(dayInput.atStartOfDay(), dayInput.plusDays(1).atStartOfDay());
+		List<ActivityEnd> ends;
+		List<ActivityStart> starts;
+		Boolean endDayIsTheSameOfStartDayMarker = false;
 
-		List<ActivityEnd> ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(),
-				dayInputEnd.plusDays(1).atStartOfDay());
-		List<ActivityStart> starts = activityStartRepository
-				.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(), dayInputEnd.plusDays(1).atStartOfDay());
+		if (dayInputEnd.isEqual(dayInputStart)) {
+			endDayIsTheSameOfStartDayMarker = true;
+			ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(),
+					dayInputEnd.plusDays(2).atStartOfDay());
+			starts = activityStartRepository.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(),
+					dayInputEnd.plusDays(2).atStartOfDay());
+		} else {
+			ends = activityEndRepository.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(),
+					dayInputEnd.plusDays(1).atStartOfDay());
+			starts = activityStartRepository.findByTimeBetweenOrderByTimeAsc(dayInputStart.atStartOfDay(),
+					dayInputEnd.plusDays(1).atStartOfDay());
+		}
 
 		Boolean startOfDay = false;
 		Boolean endOfDay = false;
@@ -473,23 +484,37 @@ public class ActivityService {
 //		If there are activities for the selected days
 		else {
 //			Testing to see if the current not finished activity occurs in the same day of the start or end of the new activity
-			if (currentActivity.getLastStart().getTime().toLocalDate().isEqual(dayInputStart)
-					|| currentActivity.getLastStart().getTime().toLocalDate().isEqual(dayInputEnd)) {
-				if (currentActivity.getActivityStartCount() == currentActivity.getActivityEndCount() + 1) {
-					ends.add(new ActivityEnd(currentActivity, LocalDateTime.now()));
-//				markerIfInputDayIsToday = true;
+			if (endDayIsTheSameOfStartDayMarker) {
+				if (currentActivity.getLastStart().getTime().toLocalDate().isAfter(dayInputStart.minusDays(1))
+						&& currentActivity.getLastStart().getTime().toLocalDate().isBefore(dayInputEnd.plusDays(3))) {
+					if (currentActivity.getActivityStartCount() == currentActivity.getActivityEndCount() + 1) {
+						ends.add(new ActivityEnd(currentActivity, LocalDateTime.now()));
+//					markerIfInputDayIsToday = true;
+					}
+				}
+			} else {
+				if (currentActivity.getLastStart().getTime().toLocalDate().isAfter(dayInputStart.minusDays(1))
+						&& currentActivity.getLastStart().getTime().toLocalDate().isBefore(dayInputEnd.plusDays(2))) {
+
+					if (currentActivity.getActivityStartCount() == currentActivity.getActivityEndCount() + 1) {
+						ends.add(new ActivityEnd(currentActivity, LocalDateTime.now()));
+//						markerIfInputDayIsToday = true;
+					}
+
 				}
 
 			}
 
-//		Checking if there wasn't a activity that started in one day and stopped in other
+//		Checking if there wasn't a activity that started in one day and stopped in other outside of the interval range
 			if (ends.get(0).getActivity().getId() != starts.get(0).getActivity().getId()) {
 				if (starts.get(0).getTime().isAfter(ends.get(0).getTime())) {
-					temporaryEnd = ends.get(ends.size() - 1).getTime();
+//					temporaryEnd = ends.get(ends.size() - 1).getTime();
+					temporaryEnd = ends.get(0).getTime();
 					ends.remove(0);
 					startOfDay = true;
 				}
 			}
+			
 			if (starts.get(starts.size() - 1).getActivity().getId() != ends.get(ends.size() - 1).getActivity()
 					.getId()) {
 				if (starts.get(starts.size() - 1).getTime().isAfter(ends.get(ends.size() - 1).getTime())) {
@@ -523,30 +548,51 @@ public class ActivityService {
 			for (ActivityStart start : starts) {
 				startsTime.add(start.getTime());
 			}
+//			There is no specific correction for the start of the first day
 			if (!(startOfDay)) {
+//				There is no specific correction for the end of the last day
 				if (!(endOfDay)) {
-//				Beginning of the day until the first start
-					interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
+//				Beginning of the "starting" day until the first start
+					interval.add(new TimeInterval(dayInputStart.atStartOfDay(), startsTime.get(0)));
 					interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
-//				Last end until the ending of the day
-					interval.add(
-							new TimeInterval(endsTime.get(endsTime.size() - 1), endsTime.get(0).with(LocalTime.MAX)));
+					if (endDayIsTheSameOfStartDayMarker) {
+//						Last end until the end of the ending day
+						interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1),
+								dayInputEnd.plusDays(1).atTime(LocalTime.MAX)));
+					} else {
+//						Last end until the end of the ending day
+						interval.add(
+								new TimeInterval(endsTime.get(endsTime.size() - 1), dayInputEnd.atTime(LocalTime.MAX)));
+					}
+//				There are corrections for the end of the last day
 				} else {
 //				Beginning of the day until the first start
-					interval.add(new TimeInterval(startsTime.get(0).with(LocalTime.MIN), startsTime.get(0)));
+					interval.add(new TimeInterval(dayInputStart.atStartOfDay(), startsTime.get(0)));
 					interval = TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime);
 //				Last end until the removed start
 					interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1), temporaryStart));
 				}
+//			There are corrections for the start of the first day
 			} else {
+//				There is no specific correction for the end of the last day
 				if (!(endOfDay)) {
 //				From the removed end until the first start
 					interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
 					interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
 //				Last end until the ending of the day
-					interval.add(
-							new TimeInterval(endsTime.get(endsTime.size() - 1), endsTime.get(0).with(LocalTime.MAX)));
-				} else {
+					
+					if (endDayIsTheSameOfStartDayMarker) {
+//						Last end until the end of the ending day
+						interval.add(new TimeInterval(endsTime.get(endsTime.size() - 1),
+								dayInputEnd.plusDays(1).atTime(LocalTime.MAX)));
+					} else {
+//						Last end until the end of the ending day
+						interval.add(
+								new TimeInterval(endsTime.get(endsTime.size() - 1), dayInputEnd.atTime(LocalTime.MAX)));
+					}
+				}
+//				There are corrections for the end of the last day
+				else {
 //				From the removed end until the first start
 					interval.add(new TimeInterval(temporaryEnd, startsTime.get(0)));
 					interval.addAll(TimeInterval.addToInterval(startsTime.size(), endsTime, startsTime));
@@ -608,7 +654,9 @@ public class ActivityService {
 				}
 
 				activity = addStart(activity, activityStart);
-
+				if (activityEnd != null) {
+					activity = addActivityEndService(activity, activityEnd);
+					}
 //				activity.addStart(activityStart);
 //				activity.setCurrent(true);
 //				saveService(activity, activityStart);
@@ -626,6 +674,10 @@ public class ActivityService {
 					return null;
 				}
 				activity = addStart(activity, activityStart);
+				
+				if (activityEnd != null) {
+					activity = addActivityEndService(activity, activityEnd);
+					}
 
 //				activity.addStart(activityStart);
 //				activity.setCurrent(true);
@@ -647,6 +699,10 @@ public class ActivityService {
 				}
 
 				activity = addStart(activity, activityStart);
+				
+				if (activityEnd != null) {
+					activity = addActivityEndService(activity, activityEnd);
+				}
 //				activity.addStart(activityStart);
 //				activity.setCurrent(true);
 //				saveService(activity, (ActivityStart) activityStart);
@@ -732,26 +788,29 @@ public class ActivityService {
 
 	public void deleteActivityEndService(Activity activity, ActivityEnd activityEnd) {
 		activity.deleteActivityEnd(activityEnd);
-		activityEndRepository.delete(activityEnd);
+//		activityEndRepository.delete(activityEnd);
 		saveService(activity);
 	}
 
+	@Transactional
 	public Activity addActivityEndService(Activity activity, ActivityEnd activityEnd) {
 		activity.addEnd(activityEnd);
-		saveService(activity, activityEnd);
+		saveService(activity);
 		return activity;
 	}
 
+	@Transactional
 	public Activity addActivityEndService(Activity activity, LocalDateTime endTime) {
 		activity.addEnd(endTime);
 		saveService(activity);
 		return activity;
 	}
 
+	@Transactional
 	public Activity addActivityEndService(Activity activity) {
 		ActivityEnd newEnd = new ActivityEnd(activity, LocalDateTime.now());
 		activity.addEnd(newEnd);
-		saveService(activity, newEnd);
+		saveService(activity);
 		return activity;
 	}
 
@@ -798,18 +857,13 @@ public class ActivityService {
 				}
 			}
 			if (activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) {
-				activity.addEnd(end);
-				try {
-					saveService(activity, activity.getLastEnd());
-				} catch (ThereIsNoEndException e) {
-					e.printStackTrace();
-				}
+				addActivityEndService(activity, end);
 				return activity;
 			} else if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
 				try {
-					activity.deleteActivityEnd(activity.getLastEnd());
-					activity.addEnd(end);
-					saveService(activity, activity.getLastEnd());
+					deleteActivityEndService(activity, activity.getLastEnd());
+					addActivityEndService(activity, end);
+//					saveService(activity, activity.getLastEnd());
 					return activity;
 				} catch (ThereIsNoEndException e) {
 					e.printStackTrace();
