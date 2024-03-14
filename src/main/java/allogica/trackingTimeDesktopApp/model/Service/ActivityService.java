@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.hibernate.Hibernate;
@@ -823,15 +825,8 @@ public class ActivityService {
 
 //	I changed the approach to don't really set the end in database but to dinamically calculate it. If I set it in the database I will broke the checkIntervalsAvailabilityFunction
 	@Transactional
-	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
-		LocalDateTime end;
-		try {
-			end = activity.getLastEnd().getTime();
-		} catch (ThereIsNoEndException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			end = null;
-		}
+	public Map<Long, LocalDateTime> calcEnd(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount, ThereIsNoEndException {
+		Map<Long, LocalDateTime> activitiesEndingTime = new HashMap<>();
 //		I do not know why I have used the following if statement
 //		if (end != null && (activity.getActivityStartCount() == activity.getActivityEndCount())) {
 //			return activity;
@@ -841,150 +836,25 @@ public class ActivityService {
 		List<Activity> subactivities = activity.getSubactivities();
 		for (Activity subActivity : subactivities) {
 			if (subActivity.getSubactivities().isEmpty()) {
+				activitiesEndingTime.put(subActivity.getId(), subActivity.getLastEnd().getTime());
 				continue;
 			}
 			else {
-				subActivity = calcEnd(subActivity);
+				activitiesEndingTime.putAll(calcEnd(subActivity));
 			}
 		}
+		LocalDateTime temp = LocalDateTime.of(1900, 1, 1, 0, 0);
+		for (Map.Entry<Long, LocalDateTime> entry : activitiesEndingTime.entrySet()) {
+			if (entry.getValue().isAfter(temp)) {
+				temp = entry.getValue();
+			}
+		}
+		activitiesEndingTime.put(activity.getId(), temp);
 		
-		if (!(subactivities.isEmpty())) {
-			end = LocalDateTime.of(1900, 1, 1, 0, 0);
-			for (Activity subactivity : subactivities) {
-				LocalDateTime subEnd;
-				try {
-					subEnd = subactivity.getLastEnd().getTime();
-				} catch (ThereIsNoEndException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					subEnd = null;
-				}
-				if (subEnd != null) {
-					if (subEnd.isAfter(end)) {
-						end = subEnd;
-					}
-				} else {
-					try {
-						subEnd = this.calcEnd(subactivity).getLastEnd().getTime();
-					} catch (ThereIsNoEndException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						subEnd = null;
-					}
-					if (subEnd != null && subEnd.isAfter(end)) {
-						end = subEnd;
-					}
-				}
-			}
-			if (activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) {
-				addActivityEndService(activity, end);
-				return activity;
-			} else if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
-				try {
-					deleteActivityEndService(activity, activity.getLastEnd());
-					activity = addActivityEndService(activity, end);
-//					saveService(activity, activity.getLastEnd());
-					return activity;
-				} catch (ThereIsNoEndException e) {
-					e.printStackTrace();
-					return null;
-				}
-			} else {
-				throw new IncompatibleStartsEndsCount(
-						"The number of ends and starts should be simillar! The activity Id is: " + activity.getId()
-								+ ". And the activity name is: " + activity.getName() + ".");
-			}
-		} else {
-			throw new ActivityEndingTimeException(
-					"Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: "
-							+ activity.getId() + ".");
-		}
+		return activitiesEndingTime;
 
 	}
 
-	
-	
-//	@Transactional
-//	public Activity calcEnd(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
-//		LocalDateTime end;
-//		try {
-//			end = activity.getLastEnd().getTime();
-//		} catch (ThereIsNoEndException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//			end = null;
-//		}
-////		I do not know why I have used the following if statement
-////		if (end != null && (activity.getActivityStartCount() == activity.getActivityEndCount())) {
-////			return activity;
-////		}
-////		Starting verification of subactivities ends if it is not complete in the activity itself
-//		activity = getActivityById(activity.getId());
-//		List<Activity> subactivities = activity.getSubactivities();
-//		for (Activity subActivity : subactivities) {
-//			if (subActivity.getSubactivities().isEmpty()) {
-//				continue;
-//			}
-//			else {
-//				subActivity = calcEnd(subActivity);
-//			}
-//		}
-//		
-//		if (!(subactivities.isEmpty())) {
-//			end = LocalDateTime.of(1900, 1, 1, 0, 0);
-//			for (Activity subactivity : subactivities) {
-//				LocalDateTime subEnd;
-//				try {
-//					subEnd = subactivity.getLastEnd().getTime();
-//				} catch (ThereIsNoEndException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//					subEnd = null;
-//				}
-//				if (subEnd != null) {
-//					if (subEnd.isAfter(end)) {
-//						end = subEnd;
-//					}
-//				} else {
-//					try {
-//						subEnd = this.calcEnd(subactivity).getLastEnd().getTime();
-//					} catch (ThereIsNoEndException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//						subEnd = null;
-//					}
-//					if (subEnd != null && subEnd.isAfter(end)) {
-//						end = subEnd;
-//					}
-//				}
-//			}
-//			if (activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) {
-//				addActivityEndService(activity, end);
-//				return activity;
-//			} else if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
-//				try {
-//					deleteActivityEndService(activity, activity.getLastEnd());
-//					activity = addActivityEndService(activity, end);
-////					saveService(activity, activity.getLastEnd());
-//					return activity;
-//				} catch (ThereIsNoEndException e) {
-//					e.printStackTrace();
-//					return null;
-//				}
-//			} else {
-//				throw new IncompatibleStartsEndsCount(
-//						"The number of ends and starts should be simillar! The activity Id is: " + activity.getId()
-//								+ ". And the activity name is: " + activity.getName() + ".");
-//			}
-//		} else {
-//			throw new ActivityEndingTimeException(
-//					"Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: "
-//							+ activity.getId() + ".");
-//		}
-//
-//	}
-	
-	
 	
 	
 	@Transactional
@@ -1047,51 +917,51 @@ public class ActivityService {
 		return activity;
 	}
 
-	public Activity calcUsefulTime(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
-		List<Activity> subActivities = activity.getSubactivities();
-		List<LocalDateTime> ends = activity.getEndTime();
-		List<LocalDateTime> starts = activity.getStartTime();
-		if (subActivities.isEmpty()) {
-			if (starts.size() == ends.size() + 1) {
-				try {
-					activity = calcEnd(activity);
-					ends = activity.getEndTime();
-					if (starts.size() == ends.size()) {
-						activity.sumUsefulTime(starts, ends);
-						saveService(activity);
-					}
-				} catch (ActivityEndingTimeException e) {
-					e.printStackTrace();
-					System.out.println("It is going to calculate considering the time from now!");
-					ends.add(LocalDateTime.now());
-					activity.sumUsefulTime(starts, ends);
-					saveService(activity);
-				} catch (IncompatibleStartsEndsCount e) {
-					e.printStackTrace();
-					System.out.println("It is going to calculate considering the time from now!");
-					ends.add(LocalDateTime.now());
-					activity.sumUsefulTime(starts, ends);
-					saveService(activity);
-				}
-			} else if (starts.size() == ends.size()) {
-				activity.sumUsefulTime(starts, ends);
-				saveService(activity);
-			} else {
-				throw new ActivityEndingTimeException(
-						"Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: "
-								+ activity.getId() + ".");
-			}
-		} else {
-			Duration tempUsefulTime = Duration.ZERO;
-			for (Activity subActivity : subActivities) {
-				subActivity = calcUsefulTime(subActivity);
-				tempUsefulTime = tempUsefulTime.plus(subActivity.getUsefulTime());
-			}
-			activity.setUsefulTime(tempUsefulTime);
-			saveService(activity);
-		}
-		return activity;
-	}
+//	public Activity calcUsefulTime(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
+//		List<Activity> subActivities = activity.getSubactivities();
+//		List<LocalDateTime> ends = activity.getEndTime();
+//		List<LocalDateTime> starts = activity.getStartTime();
+//		if (subActivities.isEmpty()) {
+//			if (starts.size() == ends.size() + 1) {
+//				try {
+//					activity = calcEnd(activity);
+//					ends = activity.getEndTime();
+//					if (starts.size() == ends.size()) {
+//						activity.sumUsefulTime(starts, ends);
+//						saveService(activity);
+//					}
+//				} catch (ActivityEndingTimeException e) {
+//					e.printStackTrace();
+//					System.out.println("It is going to calculate considering the time from now!");
+//					ends.add(LocalDateTime.now());
+//					activity.sumUsefulTime(starts, ends);
+//					saveService(activity);
+//				} catch (IncompatibleStartsEndsCount e) {
+//					e.printStackTrace();
+//					System.out.println("It is going to calculate considering the time from now!");
+//					ends.add(LocalDateTime.now());
+//					activity.sumUsefulTime(starts, ends);
+//					saveService(activity);
+//				}
+//			} else if (starts.size() == ends.size()) {
+//				activity.sumUsefulTime(starts, ends);
+//				saveService(activity);
+//			} else {
+//				throw new ActivityEndingTimeException(
+//						"Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: "
+//								+ activity.getId() + ".");
+//			}
+//		} else {
+//			Duration tempUsefulTime = Duration.ZERO;
+//			for (Activity subActivity : subActivities) {
+//				subActivity = calcUsefulTime(subActivity);
+//				tempUsefulTime = tempUsefulTime.plus(subActivity.getUsefulTime());
+//			}
+//			activity.setUsefulTime(tempUsefulTime);
+//			saveService(activity);
+//		}
+//		return activity;
+//	}
 }
 //
 //} catch (ActivityEndingTimeException e) {

@@ -183,7 +183,7 @@ public class TestConfig implements CommandLineRunner {
 //		System.out.println(activityService.getFirstLevelSubactivities(activity.getId()).getChildren());
 		System.out.println("Tudo certo por aqui!");
 		
-		activity = activityService.calcEnd(activity);
+		System.out.println(activityService.calcEnd(activity));
 		
 		
 //		activityService.saveActivity(activity);
