@@ -42,6 +42,11 @@ public class TestConfig implements CommandLineRunner {
 		Activity activity = new Activity("Trabalho de Casa");
 		activity.addStart(LocalDateTime.now());
 		activityService.createFirstActivity(activity);
+//		ActivityEnd activityEnd = new ActivityEnd(activity, LocalDateTime.now().plusHours(7));
+//		activityService.addActivityEndService(activity, activityEnd);
+		
+		
+		
 		
 		Activity activityTest1 = new Activity("Tarefa do dia anterior");
 		ActivityStart activityStartTest1 = new ActivityStart(activityTest1, LocalDateTime.now().minusDays(1));
@@ -56,6 +61,12 @@ public class TestConfig implements CommandLineRunner {
 		ActivityCategory playing = activityService.createActivityCategoriesService("Playing");
 		activity3.addCategories(learning);
 		activityService.addActivityStartService(activity3);
+		activityService.addActivityEndService(activity3);
+		
+		
+		
+		activity3.addCategories(learning);
+//		activityService.addActivityStartService(activity3);
 		activity = activityService.getActivityById(activity.getId());
 		activity.addCategories(learning);
 		activityService.saveService(activity);
@@ -151,10 +162,28 @@ public class TestConfig implements CommandLineRunner {
 		ActivityStart activityStartSubactivity2e = new ActivityStart(subactivity2e, subactivity2c.getLastStart().getTime().plusHours(3));
 		ActivityEnd activityEndSubactivity2e = new ActivityEnd(subactivity2e, subactivity2c.getLastStart().getTime().plusDays(1));
 		activityService.addActivityStartService(subactivity2e, activityStartSubactivity2e, Duration.ofMinutes(3), activityEndSubactivity2e);
+//		
+		
+		
+		subactivity2a = activityService.getActivityById(subactivity2a.getId());
+//		subactivity2a = activityService.deleteActivityStartService(subactivity2a, subactivity2a.getLastStart());
+		
+		ActivityStart activityStartSubactivity2a = new ActivityStart(subactivity2a, subactivity2c.getLastStart().getTime().plusHours(4));
+		ActivityEnd activityEndSubactivity2a = new ActivityEnd(subactivity2a, subactivity2c.getLastStart().getTime().plusHours(5));
+		
+		
+		subactivity2a = activityService.addActivityStartService(subactivity2a, activityStartSubactivity2a, Duration.ofMinutes(5), activityEndSubactivity2a);
+		
+		
+		subactivity2c = activityService.getActivityById(subactivity2c.getId());
+		ActivityStart activityStartSubactivity2cc = new ActivityStart(subactivity2c, subactivity2c.getLastStart().getTime().minusDays(5));
+		activityService.addActivityStartService(subactivity2c, activityStartSubactivity2cc, Duration.ofMinutes(3));
 		
 //		System.out.println(activityService.getFirstLevelSubactivities(31L).getData());
 //		System.out.println(activityService.getFirstLevelSubactivities(activity.getId()).getChildren());
 		System.out.println("Tudo certo por aqui!");
+		
+		activity = activityService.calcEnd(activity);
 		
 		
 //		activityService.saveActivity(activity);
