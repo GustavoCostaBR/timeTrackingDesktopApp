@@ -141,6 +141,36 @@ public class Activity {
 		ActivityStart lastItem = activityStarts.get(siize - 1);
 		return (lastItem);
 	}
+	
+	public LocalDateTime getLastTemporalStart() throws ThereIsNoStartException {
+		int siize = activityEnds.size();
+		if (siize == 0) {
+			throw new ThereIsNoStartException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
+		LocalDateTime temporaryTime = LocalDateTime.MIN;
+		for (ActivityStart activityStart : activityStarts) {
+			if(activityStart.getTime().isAfter(temporaryTime)) {
+				temporaryTime = activityStart.getTime();
+			}
+		}
+		return (temporaryTime);
+	}
+	
+	public LocalDateTime getLFirstTemporalStart() throws ThereIsNoStartException {
+		int siize = activityEnds.size();
+		if (siize == 0) {
+			throw new ThereIsNoStartException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
+		LocalDateTime temporaryTime = LocalDateTime.MAX;
+		for (ActivityStart activityStart : activityStarts) {
+			if(activityStart.getTime().isBefore(temporaryTime)) {
+				temporaryTime = activityStart.getTime();
+			}
+		}
+		return (temporaryTime);
+	}
+	
+	
 	public ActivityStart getFirstStart() throws ThereIsNoStartException {
 		int siize = activityStarts.size();
 		if (siize == 0) {
@@ -184,6 +214,35 @@ public class Activity {
 		ActivityEnd lastItem = activityEnds.get(siize - 1);
 		return (lastItem);
 	}
+	
+	public LocalDateTime getLastTemporalEnd() throws ThereIsNoEndException {
+		int siize = activityEnds.size();
+		if (siize == 0) {
+			throw new ThereIsNoEndException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
+		LocalDateTime temporaryTime = LocalDateTime.MIN;
+		for (ActivityEnd activityEnd : activityEnds) {
+			if(activityEnd.getTime().isAfter(temporaryTime)) {
+				temporaryTime = activityEnd.getTime();
+			}
+		}
+		return (temporaryTime);
+	}
+	
+	public LocalDateTime getFirstTemporalEnd() throws ThereIsNoEndException {
+		int siize = activityEnds.size();
+		if (siize == 0) {
+			throw new ThereIsNoEndException("There is no end for activity " + this.getName() + "with ID = " + this.getId() + ".");
+		}
+		LocalDateTime temporaryTime = LocalDateTime.MAX;
+		for (ActivityEnd activityEnd : activityEnds) {
+			if(activityEnd.getTime().isBefore(temporaryTime)) {
+				temporaryTime = activityEnd.getTime();
+			}
+		}
+		return (temporaryTime);
+	}
+	
 	public ActivityEnd getFirsEnd() throws ThereIsNoEndException {
 		int siize = activityEnds.size();
 		if (siize == 0) {
@@ -261,8 +320,8 @@ public class Activity {
 	public void addSubactivity(Activity subactivity) {
 		subactivities.add(subactivity);
 	}
-	public void setSubActivities(List<Activity> activities) {
-		for (Activity activity : activities) {
+	public void setSubActivities(List<Activity> activitiesList) {
+		for (Activity activity : activitiesList) {
 			this.addSubactivity(activity);
 		}
 	}

@@ -825,7 +825,7 @@ public class ActivityService {
 
 //	I changed the approach to don't really set the end in database but to dinamically calculate it. If I set it in the database I will broke the checkIntervalsAvailabilityFunction
 	@Transactional
-	public Map<Long, LocalDateTime> calcEnd(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount, ThereIsNoEndException {
+	public Map<Long, LocalDateTime> calcEnd(Activity activity) {
 		Map<Long, LocalDateTime> activitiesEndingTime = new HashMap<>();
 //		I do not know why I have used the following if statement
 //		if (end != null && (activity.getActivityStartCount() == activity.getActivityEndCount())) {
@@ -836,19 +836,35 @@ public class ActivityService {
 		List<Activity> subactivities = activity.getSubactivities();
 		for (Activity subActivity : subactivities) {
 			if (subActivity.getSubactivities().isEmpty()) {
-				activitiesEndingTime.put(subActivity.getId(), subActivity.getLastEnd().getTime());
+				LocalDateTime subActivityGetLastEndGetTime;
+				try {
+					subActivityGetLastEndGetTime = subActivity.getLastTemporalEnd();
+				} catch (ThereIsNoEndException e) {
+					e.printStackTrace();
+					subActivityGetLastEndGetTime = LocalDateTime.now();
+				}
+				activitiesEndingTime.put(subActivity.getId(), subActivityGetLastEndGetTime);
 				continue;
 			}
 			else {
 				activitiesEndingTime.putAll(calcEnd(subActivity));
 			}
 		}
-		LocalDateTime temp = LocalDateTime.of(1900, 1, 1, 0, 0);
+		
+		LocalDateTime temp;
+		try {
+			temp = activity.getLastTemporalEnd();
+		} catch (ThereIsNoEndException e) {
+			e.printStackTrace();
+			temp = LocalDateTime.MIN;
+		}
+		
 		for (Map.Entry<Long, LocalDateTime> entry : activitiesEndingTime.entrySet()) {
 			if (entry.getValue().isAfter(temp)) {
 				temp = entry.getValue();
 			}
 		}
+		
 		activitiesEndingTime.put(activity.getId(), temp);
 		
 		return activitiesEndingTime;
@@ -856,66 +872,48 @@ public class ActivityService {
 	}
 
 	
-	
 	@Transactional
-	public Activity calcTotalTime(Activity activity) throws ActivityEndingTimeException, ActivityStartingTimeException,
-			IncompatibleStartsEndsCount, ThereIsNoStartException, ThereIsNoEndException {
-		Duration totalTime = Duration.ZERO;
-		LocalDateTime start;
-		LocalDateTime end;
-		if (activity.getActivityStartCount() != 0) {
-			if (activity.getActivityStartCount() == activity.getActivityEndCount()) {
-				start = activity.getFirstStart().getTime();
-				end = activity.getLastEnd().getTime();
-				totalTime = Duration.between(start, end);
-				if (activity.getTotalTime() != totalTime) {
-					activity.setTotalTime(totalTime);
-					saveService(activity);
-					return activity;
-				}
-				return activity;
+	public Activity setActivityAndSubactivitiesTotalTime(Activity activity, Map<Long, LocalDateTime> temporary) throws ThereIsNoStartException {
+//		activity = getActivityById(activity.getId());
+		List<Activity> subactivities = activity.getSubactivities();
+		
+		if (!(subactivities.isEmpty())) {
+			for (Activity subactivity : subactivities) {
+				subactivity = setActivityAndSubactivitiesTotalTime(subactivity, temporary);
 			}
-			if (activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) {
-				Activity temporary;
-				try {
-					temporary = calcEnd(activity);
-					activity = temporary;
-				} catch (ActivityEndingTimeException e) {
-					e.printStackTrace();
-					start = activity.getFirstStart().getTime();
-					totalTime = Duration.between(start, LocalDateTime.now());
-					activity.setTotalTime(totalTime);
-					saveService(activity);
-					return activity;
-				} catch (IncompatibleStartsEndsCount e) {
-					System.out.println("Serious. It's not supposed to happen!");
-					e.printStackTrace();
-					start = activity.getFirstStart().getTime();
-					totalTime = Duration.between(start, LocalDateTime.now());
-					activity.setTotalTime(totalTime);
-					saveService(activity);
-					return activity;
-				}
-				start = activity.getFirstStart().getTime();
-				end = activity.getLastEnd().getTime();
-				totalTime = Duration.between(start, LocalDateTime.now());
-				if (totalTime != activity.getTotalTime()) {
-					activity.setTotalTime(totalTime);
-					saveService(activity);
-					return activity;
-				}
-			} else {
-				throw new IncompatibleStartsEndsCount(
-						"The number of ends and starts should be simillar! The activity Id is: " + activity.getId()
-								+ ". And the activity name is: " + activity.getName() + ".");
-			}
-		} else {
-			throw new ActivityStartingTimeException(
-					"The activity with activityID equals to " + activity.getId() + " has no starting time.");
 		}
-//		It will never get to this point, but for the eclipse IDE to be happy...
+			activity.deleteAllSubactitivies();
+			activity.setSubActivities(subactivities);
+			LocalDateTime start = activity.getLFirstTemporalStart();
+			LocalDateTime end = temporary.get(activity.getId());
+			Duration activityTotalTime = Duration.between(start, end);
+			if (activity.getTotalTime() != activityTotalTime) {
+				activity.setTotalTime(activityTotalTime);
+			}
+			
 		return activity;
 	}
+	
+	
+	@Transactional
+	public Activity calcTotalTime(Activity activity) throws ThereIsNoStartException, ThereIsNoEndException {
+		activity = getActivityById(activity.getId());
+		if (activity.getActivityStartCount() != 0) {
+			if ((activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) || (activity.getActivityStartCount() == (activity.getActivityEndCount()))) {
+				Map<Long, LocalDateTime> temporary;
+					temporary = calcEnd(activity);
+//					System.out.println(temporary);
+					activity = setActivityAndSubactivitiesTotalTime(activity, temporary);
+					System.out.println(temporary);
+//					saveService(activity);
+					return activity;
+
+				}
+				}
+		return activity;
+		}
+//		It will never get to this point, but for the eclipse IDE to be happy...
+		
 
 //	public Activity calcUsefulTime(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
 //		List<Activity> subActivities = activity.getSubactivities();
