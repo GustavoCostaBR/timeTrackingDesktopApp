@@ -823,6 +823,53 @@ public class ActivityService {
 		return activity;
 	}
 
+	
+	
+//	I changed the approach to don't really set the end in database but to dinamically calculate it. If I set it in the database I will broke the checkIntervalsAvailabilityFunction
+	@Transactional
+	public Map<Long, LocalDateTime> calcStart(Activity activity) throws ThereIsNoStartException {
+		Map<Long, LocalDateTime> activitiesStartingTime = new HashMap<>();
+//		I do not know why I have used the following if statement
+//		if (end != null && (activity.getActivityStartCount() == activity.getActivityEndCount())) {
+//			return activity;
+//		}
+//		Starting verification of subactivities ends if it is not complete in the activity itself
+		activity = getActivityById(activity.getId());
+		List<Activity> subactivities = activity.getSubactivities();
+		for (Activity subActivity : subactivities) {
+			if (subActivity.getSubactivities().isEmpty()) {
+				LocalDateTime subActivityGetFirstStartGetTime;
+				subActivityGetFirstStartGetTime = subActivity.getLFirstTemporalStart();
+				activitiesStartingTime.put(subActivity.getId(), subActivityGetFirstStartGetTime);
+				continue;
+
+			}
+			else {
+				activitiesStartingTime.putAll(calcStart(subActivity));
+			}
+		}
+		
+		LocalDateTime temp;
+		try {
+			temp = activity.getLFirstTemporalStart();
+		} catch (ThereIsNoStartException e) {
+			e.printStackTrace();
+			temp = LocalDateTime.MAX;
+		}
+		
+		for (Map.Entry<Long, LocalDateTime> entry : activitiesStartingTime.entrySet()) {
+			if (entry.getValue().isBefore(temp)) {
+				temp = entry.getValue();
+			}
+		}
+		
+		activitiesStartingTime.put(activity.getId(), temp);
+		
+		return activitiesStartingTime;
+
+	}
+	
+	
 //	I changed the approach to don't really set the end in database but to dinamically calculate it. If I set it in the database I will broke the checkIntervalsAvailabilityFunction
 	@Transactional
 	public Map<Long, LocalDateTime> calcEnd(Activity activity) {
@@ -873,19 +920,19 @@ public class ActivityService {
 
 	
 	@Transactional
-	public Activity setActivityAndSubactivitiesTotalTime(Activity activity, Map<Long, LocalDateTime> temporary) throws ThereIsNoStartException {
+	public Activity setActivityAndSubactivitiesTotalTime(Activity activity, Map<Long, LocalDateTime> temporaryEndList,  Map<Long, LocalDateTime> temporaryStartList) throws ThereIsNoStartException {
 //		activity = getActivityById(activity.getId());
 		List<Activity> subactivities = activity.getSubactivities();
 		
 		if (!(subactivities.isEmpty())) {
 			for (Activity subactivity : subactivities) {
-				subactivity = setActivityAndSubactivitiesTotalTime(subactivity, temporary);
+				subactivity = setActivityAndSubactivitiesTotalTime(subactivity, temporaryEndList, temporaryStartList);
 			}
 		}
 			activity.deleteAllSubactitivies();
 			activity.setSubActivities(subactivities);
-			LocalDateTime start = activity.getLFirstTemporalStart();
-			LocalDateTime end = temporary.get(activity.getId());
+			LocalDateTime start = temporaryStartList.get(activity.getId());
+			LocalDateTime end = temporaryEndList.get(activity.getId());
 			Duration activityTotalTime = Duration.between(start, end);
 			if (activity.getTotalTime() != activityTotalTime) {
 				activity.setTotalTime(activityTotalTime);
@@ -900,11 +947,14 @@ public class ActivityService {
 		activity = getActivityById(activity.getId());
 		if (activity.getActivityStartCount() != 0) {
 			if ((activity.getActivityStartCount() == (activity.getActivityEndCount() + 1)) || (activity.getActivityStartCount() == (activity.getActivityEndCount()))) {
-				Map<Long, LocalDateTime> temporary;
-					temporary = calcEnd(activity);
+				Map<Long, LocalDateTime> temporaryEndList;
+				Map<Long, LocalDateTime> temporaryStartList;
+					temporaryEndList = calcEnd(activity);
+					temporaryStartList = calcStart(activity);
 //					System.out.println(temporary);
-					activity = setActivityAndSubactivitiesTotalTime(activity, temporary);
-					System.out.println(temporary);
+					activity = setActivityAndSubactivitiesTotalTime(activity, temporaryEndList, temporaryStartList);
+					System.out.println(temporaryEndList);
+					System.out.println(temporaryStartList);
 //					saveService(activity);
 					return activity;
 
