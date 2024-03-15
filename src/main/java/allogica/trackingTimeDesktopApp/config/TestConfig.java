@@ -183,9 +183,16 @@ public class TestConfig implements CommandLineRunner {
 //		System.out.println(activityService.getFirstLevelSubactivities(activity.getId()).getChildren());
 		System.out.println("Tudo certo por aqui!");
 		
+		Activity activityTestLongDuration = new Activity("Tarefa longaTeste");
+		ActivityStart activityStartTestLongDuration = new ActivityStart(activityTestLongDuration, LocalDateTime.now().minusYears(10));
+		ActivityEnd activityEndTestLongDuration = new ActivityEnd(activityTestLongDuration, LocalDateTime.now().minusDays(7));
+		activityService.addActivityStartService(activityTestLongDuration, activityStartTestLongDuration, Duration.ofMinutes(3), activityEndTestLongDuration);
+		
+		
 //		System.out.println(activityService.calcEnd(activity));
 //		System.out.println(LocalDateTime.MIN);
 		System.out.println(activityService.calcTotalTime(activity));
+		System.out.println(activityService.calcTotalTime(activityTestLongDuration));
 		
 		
 //		activityService.saveActivity(activity);

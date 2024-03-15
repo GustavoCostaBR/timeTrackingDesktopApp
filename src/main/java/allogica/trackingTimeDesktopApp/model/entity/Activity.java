@@ -267,7 +267,7 @@ public class Activity {
 	
 
 	
-	@Column(name = "total_time")
+	@Column(name = "total_time", columnDefinition = "bigint")
 	private Duration totalTime;
 	public Duration getTotalTime() {
 		return totalTime;
@@ -278,7 +278,7 @@ public class Activity {
 
 	
 	
-	@Column(name = "useful_time")
+	@Column(name = "useful_time", columnDefinition = "bigint")
 	private Duration usefulTime;
 	public Duration getUsefulTime() {
 		return usefulTime;
