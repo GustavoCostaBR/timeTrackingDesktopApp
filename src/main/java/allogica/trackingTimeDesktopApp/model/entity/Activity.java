@@ -296,7 +296,7 @@ public class Activity {
 			for (LocalDateTime start : starts) {
 				counter2++;
 				if (counter1 == counter2) {
-					usefulTime = usefulTime.plus(Duration.between(end, start));
+					usefulTime = usefulTime.plus(Duration.between(start, end));
 				}
 			}
 		}

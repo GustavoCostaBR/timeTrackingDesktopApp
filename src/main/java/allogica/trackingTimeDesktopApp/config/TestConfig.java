@@ -194,6 +194,7 @@ public class TestConfig implements CommandLineRunner {
 		System.out.println(activityService.calcTotalTime(activity));
 		System.out.println(activityService.calcTotalTime(activityTestLongDuration));
 		
+		System.out.println(activityService.calcUsefulTime(activity.getId()));
 		
 //		activityService.saveActivity(activity);
 //		System.out.println("Tudo rodando corretamente por aqui!");

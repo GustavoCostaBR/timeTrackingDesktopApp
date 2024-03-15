@@ -964,52 +964,38 @@ public class ActivityService {
 		}
 //		It will never get to this point, but for the eclipse IDE to be happy...
 		
-
-//	public Activity calcUsefulTime(Activity activity) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
-//		List<Activity> subActivities = activity.getSubactivities();
-//		List<LocalDateTime> ends = activity.getEndTime();
-//		List<LocalDateTime> starts = activity.getStartTime();
-//		if (subActivities.isEmpty()) {
-//			if (starts.size() == ends.size() + 1) {
-//				try {
-//					activity = calcEnd(activity);
-//					ends = activity.getEndTime();
-//					if (starts.size() == ends.size()) {
-//						activity.sumUsefulTime(starts, ends);
+	@Transactional
+	public Activity calcUsefulTime(Long activityId) throws ActivityEndingTimeException, IncompatibleStartsEndsCount {
+		Activity activity = getActivityById(activityId);
+		List<Activity> subActivities = activity.getSubactivities();
+		List<LocalDateTime> ends = activity.getEndTime();
+		List<LocalDateTime> starts = activity.getStartTime();
+		if (subActivities.isEmpty()) {
+			if (starts.size() == ends.size() + 1) {
+					ends.add(LocalDateTime.now());
+					if (starts.size() == ends.size()) {
+						activity.sumUsefulTime(starts, ends);
 //						saveService(activity);
-//					}
-//				} catch (ActivityEndingTimeException e) {
-//					e.printStackTrace();
-//					System.out.println("It is going to calculate considering the time from now!");
-//					ends.add(LocalDateTime.now());
-//					activity.sumUsefulTime(starts, ends);
-//					saveService(activity);
-//				} catch (IncompatibleStartsEndsCount e) {
-//					e.printStackTrace();
-//					System.out.println("It is going to calculate considering the time from now!");
-//					ends.add(LocalDateTime.now());
-//					activity.sumUsefulTime(starts, ends);
-//					saveService(activity);
-//				}
-//			} else if (starts.size() == ends.size()) {
-//				activity.sumUsefulTime(starts, ends);
+					}
+			} else if (starts.size() == ends.size()) {
+				activity.sumUsefulTime(starts, ends);
 //				saveService(activity);
-//			} else {
-//				throw new ActivityEndingTimeException(
-//						"Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: "
-//								+ activity.getId() + ".");
-//			}
-//		} else {
-//			Duration tempUsefulTime = Duration.ZERO;
-//			for (Activity subActivity : subActivities) {
-//				subActivity = calcUsefulTime(subActivity);
-//				tempUsefulTime = tempUsefulTime.plus(subActivity.getUsefulTime());
-//			}
-//			activity.setUsefulTime(tempUsefulTime);
+			} else {
+				throw new ActivityEndingTimeException(
+						"Or the activity should have an ending time for each starting time or it should have subactivities. The activity Id is: "
+								+ activity.getId() + ".");
+			}
+		} else {
+			Duration tempUsefulTime = Duration.ZERO;
+			for (Activity subActivity : subActivities) {
+				subActivity = calcUsefulTime(subActivity.getId());
+				tempUsefulTime = tempUsefulTime.plus(subActivity.getUsefulTime());
+			}
+			activity.setUsefulTime(tempUsefulTime);
 //			saveService(activity);
-//		}
-//		return activity;
-//	}
+		}
+		return activity;
+	}
 }
 //
 //} catch (ActivityEndingTimeException e) {
