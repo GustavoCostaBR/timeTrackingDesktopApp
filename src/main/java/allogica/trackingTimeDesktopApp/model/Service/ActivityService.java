@@ -25,7 +25,6 @@ import allogica.trackingTimeDesktopApp.model.repository.ActivityRepository;
 import allogica.trackingTimeDesktopApp.model.repository.ActivityStartRepository;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityNotFoundException;
-import allogica.trackingTimeDesktoppApp.exceptions.ActivityStartingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
 import allogica.trackingTimeDesktoppApp.exceptions.InvalidActivityInputException;
@@ -997,6 +996,3 @@ public class ActivityService {
 		return activity;
 	}
 }
-//
-//} catch (ActivityEndingTimeException e) {
-//	throw new ActivityEndingTimeException(e.getMessage());
