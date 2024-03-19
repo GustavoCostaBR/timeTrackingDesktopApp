@@ -1,6 +1,6 @@
 package allogica.trackingTimeDesktopApp.model.Service;
 
-import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +15,8 @@ import allogica.trackingTimeDesktopApp.model.entity.Role;
 import allogica.trackingTimeDesktopApp.model.entity.User;
 import allogica.trackingTimeDesktopApp.model.repository.UserRepository;
 import allogica.trackingTimeDesktopApp.security.SecurityConfig;
+
+//import lombok.Builder;
 
 @Service
 public class UserService {
@@ -56,7 +58,7 @@ public class UserService {
                 // Codifica a senha do usuário com o algoritmo bcrypt
                 .password(securityConfiguration.passwordEncoder().encode(createUserDto.password()))
                 // Atribui ao usuário uma permissão específica
-                .roles(List.of(Role.builder().name(createUserDto.role()).build()))
+                .roles(Set.of(Role.builder().name(createUserDto.role()).build()))
                 .build();
 
         // Salva o novo usuário no banco de dados
