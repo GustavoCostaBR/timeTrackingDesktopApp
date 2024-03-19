@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 import allogica.trackingTimeDesktopApp.DTOs.CreateUserDto;
 import allogica.trackingTimeDesktopApp.DTOs.LoginUserDto;
 import allogica.trackingTimeDesktopApp.DTOs.RecoveryJwtTokenDto;
-import allogica.trackingTimeDesktopApp.model.Service.CustomUserDetailsService;
+import allogica.trackingTimeDesktopApp.model.Service.UserService;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
 	@Autowired
-    private CustomUserDetailsService userService;
+    private UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<RecoveryJwtTokenDto> authenticateUser(@RequestBody LoginUserDto loginUserDto) {
@@ -34,16 +34,16 @@ public class UserController {
 
     @GetMapping("/test")
     public ResponseEntity<String> getAuthenticationTest() {
-        return new ResponseEntity<>("Autenticado com sucesso", HttpStatus.OK);
+        return new ResponseEntity<>("Succesfully anthenticated", HttpStatus.OK);
     }
 
     @GetMapping("/test/customer")
     public ResponseEntity<String> getCustomerAuthenticationTest() {
-        return new ResponseEntity<>("Cliente autenticado com sucesso", HttpStatus.OK);
+        return new ResponseEntity<>("Client succesfully authenticated", HttpStatus.OK);
     }
 
     @GetMapping("/test/administrator")
     public ResponseEntity<String> getAdminAuthenticationTest() {
-        return new ResponseEntity<>("Administrador autenticado com sucesso", HttpStatus.OK);
+        return new ResponseEntity<>("Admin succesfully authenticated", HttpStatus.OK);
     }
 }
