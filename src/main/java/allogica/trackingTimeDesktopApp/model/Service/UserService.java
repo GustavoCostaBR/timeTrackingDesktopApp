@@ -33,35 +33,35 @@ public class UserService {
     @Autowired
     private SecurityConfig securityConfiguration;
 
-    // Método responsável por autenticar um usuário e retornar um token JWT
+    // Method responsible for user authentication and Token JWT return
     public RecoveryJwtTokenDto authenticateUser(LoginUserDto loginUserDto) {
-        // Cria um objeto de autenticação com o email e a senha do usuário
+        // It creates a authentication object with email and password of the user
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                 new UsernamePasswordAuthenticationToken(loginUserDto.username(), loginUserDto.password());
 
-        // Autentica o usuário com as credenciais fornecidas
+        // It authenticates the user credentials
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
 
-        // Obtém o objeto UserDetails do usuário autenticado
+        // It gets the UserDetails object from the authenticated user
         User userDetails = (User) authentication.getPrincipal();
 
-        // Gera um token JWT para o usuário autenticado
+        // It generates a JWT token for the authenticated user
         return new RecoveryJwtTokenDto(jwtTokenService.generateToken(userDetails));
     }
 
-    // Método responsável por criar um usuário
+    // Method responsible for user creation/registration
     public void createUser(CreateUserDto createUserDto) {
 
-        // Cria um novo usuário com os dados fornecidos
+        // It creates a new user with the data input
         User newUser = User.builder()
                 .username(createUserDto.username())
-                // Codifica a senha do usuário com o algoritmo bcrypt
+                // It encrypts the user password with the bcrypt algorithm
                 .password(securityConfiguration.passwordEncoder().encode(createUserDto.password()))
-                // Atribui ao usuário uma permissão específica
+                // It assigns a specific permission to the user
                 .roles(Set.of(Role.builder().name(createUserDto.role()).build()))
                 .build();
 
-        // Salva o novo usuário no banco de dados
+        // It saves the new user in the database
         userRepository.save(newUser);
     }
 }
