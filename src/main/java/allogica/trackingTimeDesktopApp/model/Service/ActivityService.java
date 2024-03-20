@@ -14,6 +14,7 @@ import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import allogica.trackingTimeDesktopApp.DTOs.CreateActivityDto;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityCategory;
 import allogica.trackingTimeDesktopApp.model.entity.ActivityEnd;
@@ -610,10 +611,12 @@ public class ActivityService {
 		if (activity.getName() == null) {
 			throw new InvalidActivityInputException("Invalid activity name");
 		}
+//		Getting the number of activity starts from the DTO
 		if (activity.getActivityStartCount() == 0) {
 			throw new InvalidActivityInputException("Should have at least one start.");
 		}
 		activity.setCurrent(true);
+		
 		saveService(activity);
 
 		return activity;

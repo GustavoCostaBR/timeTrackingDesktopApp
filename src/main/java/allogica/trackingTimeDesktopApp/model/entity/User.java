@@ -1,6 +1,7 @@
 package allogica.trackingTimeDesktopApp.model.entity;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -118,5 +120,12 @@ public class User implements UserDetails {
 		// TODO Auto-generated method stub
 		return true;
 	}
+	
+//	From here will be the things related to activity
+	
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+	List<Activity> activities;
+	
+	
 
 }

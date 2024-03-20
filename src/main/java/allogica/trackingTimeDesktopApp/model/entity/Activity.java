@@ -17,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -338,6 +339,20 @@ public class Activity {
 		this("Standard Name");
 	}
 
+//	From here the user stuff
+	
+	@ManyToOne
+    @JoinColumn(name = "user_id")
+	private User user;
+
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+	
 //	public Activity(Long parentActivityId, String name, LocalDateTime start) {
 //		this.name = name;
 //		this.starts = new ArrayList<>();

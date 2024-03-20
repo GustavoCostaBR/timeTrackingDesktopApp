@@ -16,20 +16,20 @@ import allogica.trackingTimeDesktopApp.model.entity.User;
 @Service
 public class JwtTokenService {
 
-	private static final String SECRET_KEY = "abacatesupersupertretado9000"; // Chave secreta utilizada para gerar e verificar o token 
+	private static final String SECRET_KEY = "abacatesupersupertretado9000"; // Secret key to generate and validate the token 
 
-    private static final String ISSUER = "Allogica.com/trackingtimeapp"; // Emissor do token
+    private static final String ISSUER = "Allogica.com/trackingtimeapp"; // Token issuer
 
     public String generateToken(User user) {
         try {
-            // Define o algoritmo HMAC SHA256 para criar a assinatura do token passando a chave secreta definida
+            // It defines the HMAC SHA256 algorithm to create and sign the token with the secret key
             Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
             return JWT.create()
-                    .withIssuer(ISSUER) // Define o emissor do token
-                    .withIssuedAt(creationDate()) // Define a data de emissão do token
-                    .withExpiresAt(expirationDate()) // Define a data de expiração do token
-                    .withSubject(user.getUsername()) // Define o assunto do token (neste caso, o nome de usuário)
-                    .sign(algorithm); // Assina o token usando o algoritmo especificado
+                    .withIssuer(ISSUER) // It defines the token issuer
+                    .withIssuedAt(creationDate()) // It defines the creation date of the token
+                    .withExpiresAt(expirationDate()) // It defines the expiration date of the token
+                    .withSubject(user.getUsername()) // It defines the token subject (username in this case)
+                    .sign(algorithm); // Signs the token using the specified algorithm
         } catch (JWTCreationException exception){
             throw new JWTCreationException("Erro ao gerar token.", exception);
         }
@@ -37,13 +37,13 @@ public class JwtTokenService {
 
     public String getSubjectFromToken(String token) {
         try {
-            // Define o algoritmo HMAC SHA256 para verificar a assinatura do token passando a chave secreta definida
+            // It defines the HMAC SHA256 algorithm to verify the token signature passing the defined secret key
             Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
             return JWT.require(algorithm)
-                    .withIssuer(ISSUER) // Define o emissor do token
+                    .withIssuer(ISSUER) // It defines the token issuer
                     .build()
-                    .verify(token) // Verifica a validade do token
-                    .getSubject(); // Obtém o assunto (neste caso, o nome de usuário) do token
+                    .verify(token) // It verifies the token authenticity and validity
+                    .getSubject(); // It gets the token subject (username in this case)
         } catch (JWTVerificationException exception){
             throw new JWTVerificationException("Token inválido ou expirado.");
         }

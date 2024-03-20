@@ -28,11 +28,12 @@ public class SecurityConfig {
 
 //	Endpoints with required autenthication
 	public static final String [] ENDPOINTS_WITH_AUTHENTICATION_REQUIRED = {
-            "/users/test"
+            "/users/test",
+            "/activity"
     };
 	
 	// Endpoints that can only be accessed by users with client permission
-	public static final String[] ENDPOINTS_CUSTOMER = { "/users/test/customer" };
+	public static final String[] ENDPOINTS_CUSTOMER = { "/users/test/customer", "/activity" };
 
 	// Endpoints that can only be accessed by users with admin permission
 	public static final String[] ENDPOINTS_ADMIN = { "/users/test/administrator" };
