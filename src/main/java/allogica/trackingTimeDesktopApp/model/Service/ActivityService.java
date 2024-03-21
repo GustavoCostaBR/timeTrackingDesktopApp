@@ -27,6 +27,7 @@ import allogica.trackingTimeDesktopApp.model.repository.ActivityStartRepository;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityEndingTimeException;
 import allogica.trackingTimeDesktoppApp.exceptions.ActivityNotFoundException;
 import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
+import allogica.trackingTimeDesktoppApp.exceptions.CreateFirstActivityException;
 import allogica.trackingTimeDesktoppApp.exceptions.IncompatibleStartsEndsCount;
 import allogica.trackingTimeDesktoppApp.exceptions.InvalidActivityInputException;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoEndException;
@@ -65,6 +66,20 @@ public class ActivityService {
 		return activity;
 
 	}
+	
+	
+//	@Transactional
+//	public Activity getUsersActivitiesById(Long id, Long userId) {
+//		Activity activity = activityRepository.findByIdAndUser_Id(id, userId).orElse(null);
+//		if (activity != null) {
+//			Hibernate.initialize(activity.getCategories());
+//			Hibernate.initialize(activity.getStart());
+//			Hibernate.initialize(activity.getEnd());
+//			Hibernate.initialize(activity.getSubactivities());
+//		}
+//		return activity;
+//
+//	}
 
 	public class TreeNode<T> {
 		private T data;
@@ -172,6 +187,12 @@ public class ActivityService {
 		return rootNode;
 	}
 
+//	@Transactional
+//	public List<Activity> findActivitiesByParentActivityIdAndUserId(Long parentId, Long userId) {
+//	    return activityRepository.findByParentActivityIdAndUser_Id(parentId, userId);
+//	}
+//	
+	
 	@Transactional
 	public TreeNode<Activity> getFirstLevelSubactivities(Long activityId, TreeNode<Activity> rootNode) {
 		List<Activity> subactivities = activityRepository.findByParentActivityId(activityId);
@@ -216,7 +237,31 @@ public class ActivityService {
 		}
 		return rootNode;
 	}
+	
+//	Manager method to delete all activities from the database
+	@Transactional
+	public void clearAllActivities() {
+		List<Activity> allActivities = activityRepository.findAll();
+		if (allActivities != null && !(allActivities.isEmpty())) {
+			for (Activity activity : allActivities) {
+				delete(activity.getId(), true);
+			}
+		}
 
+	}
+	
+	@Transactional
+	public void clearAllUsersActivities(Long userId) {
+		List<Activity> allActivities = activityRepository.findByUser_Id(userId);
+		if (allActivities != null && !(allActivities.isEmpty())) {
+			for (Activity activity : allActivities) {
+				delete(activity.getId(), true);
+			}
+		}
+
+	}
+
+	
 	@Transactional // Ensure JPA transaction management
 	public void delete(Long activityId, Boolean deleteSubActivities) {
 //		Activity activityToDelete = entityManager.find(Activity.class, activityId);
@@ -233,6 +278,7 @@ public class ActivityService {
 			activityRepository.delete(activityToDelete); // Delete the activity itself
 		}
 	}
+
 
 	@Transactional
 	private void deleteActivityRecursively(Activity activity) {
@@ -606,8 +652,8 @@ public class ActivityService {
 		return interval;
 	}
 
-	public Activity createFirstActivity(Activity activity)
-			throws ThereIsNoStartException, InvalidActivityInputException {
+	public Activity createFirstActivity(Activity activity, Long userId)
+			throws ThereIsNoStartException, InvalidActivityInputException, CreateFirstActivityException {
 		if (activity.getName() == null) {
 			throw new InvalidActivityInputException("Invalid activity name");
 		}
@@ -616,9 +662,12 @@ public class ActivityService {
 			throw new InvalidActivityInputException("Should have at least one start.");
 		}
 		activity.setCurrent(true);
-		
-		saveService(activity);
-
+		if (activityRepository.findByUser_Id(userId).size() == 0) {
+			saveService(activity);
+		}
+		else {
+			throw new CreateFirstActivityException("There are already activities for the logged in user");
+		}
 		return activity;
 	}
 
@@ -756,16 +805,6 @@ public class ActivityService {
 		return activity;
 	}
 
-	@Transactional
-	public void clearAllActivities() {
-		List<Activity> allActivities = activityRepository.findAll();
-		if (allActivities != null && !(allActivities.isEmpty())) {
-			for (Activity activity : allActivities) {
-				delete(activity.getId(), true);
-			}
-		}
-
-	}
 
 //	To start an activity with time equals to now;
 	@Transactional

@@ -9,5 +9,7 @@ import allogica.trackingTimeDesktopApp.model.entity.Activity;
 public interface ActivityMapper {
 
 	Activity toEntity(CreateActivityDto dto);
+	
+
 //	Activity toEntity(CreateActivityDto dto, @Context CycleAvoidingMappingContext context);
 }

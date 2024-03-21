@@ -1,6 +1,7 @@
 package allogica.trackingTimeDesktopApp.DTOs;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -15,11 +16,10 @@ public record CreateActivityDto(
 		boolean current,
 		Set<ActivityCategory> activityCategories,
 		String description,
-		List<ActivityStart> activityStarts,
-		List<ActivityEnd> activityEnds,
+		List<String> activityStartsTime,
+		List<String> activityEndsTime,
 		Duration totalTime,
 		Duration usefulTime,
-		List<Activity> subactivities,
 		String action
 		) {
 

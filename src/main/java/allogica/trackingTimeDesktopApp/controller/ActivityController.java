@@ -1,6 +1,7 @@
 package allogica.trackingTimeDesktopApp.controller;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,15 +14,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import allogica.trackingTimeDesktopApp.DTOs.CreateActivityDto;
 import allogica.trackingTimeDesktopApp.model.Service.ActivityService;
 import allogica.trackingTimeDesktopApp.model.Service.CustomUserDetailsService;
 import allogica.trackingTimeDesktopApp.model.Service.UserService;
 import allogica.trackingTimeDesktopApp.model.entity.Activity;
-import allogica.trackingTimeDesktopApp.model.entity.ActivityStart;
 import allogica.trackingTimeDesktopApp.model.entity.User;
 import allogica.trackingTimeDesktopApp.utilities.ActivityMapper;
-import allogica.trackingTimeDesktoppApp.exceptions.CompromisedDataBaseException;
+import allogica.trackingTimeDesktopApp.utilities.TimeParser;
+import allogica.trackingTimeDesktoppApp.exceptions.CreateFirstActivityException;
 import allogica.trackingTimeDesktoppApp.exceptions.InvalidActivityInputException;
 import allogica.trackingTimeDesktoppApp.exceptions.ThereIsNoStartException;
 
@@ -42,36 +45,37 @@ public class ActivityController {
 
 	@PostMapping
 	public ResponseEntity<?> createActivity(@RequestBody CreateActivityDto createActivityDto) {
-//		System.out.println(SecurityContextHolder.getContext().getAuthentication());
+//		It gets the User
 		User currentUser = (User) userDetailsServiceImplementation
 				.loadUserByUsername((String) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
 		Activity activity = null;
-		System.out.println(createActivityDto.action());
+//		System.out.println(createActivityDto.action());
 		if (createActivityDto.action().equals("createFirstActivity")) {
-			System.out.println("ABAcate florido");
+//			It converts the data coming from a front end to a Activity class object
 			activity = activityMapper.toEntity(createActivityDto);
 			activity.setUser(currentUser);
-			System.out.println(activity);
-			if (activity.getActivityStartCount() == 0) {
-
+//			If the CreateActivityDTO has any starting date  
+			if (createActivityDto.activityStartsTime() == null || createActivityDto.activityStartsTime().size() == 0) {
 				activity.addStart(LocalDateTime.now());
-
 				try {
-					activityService.createFirstActivity(activity);
-				} catch (ThereIsNoStartException | InvalidActivityInputException e) {
+					activityService.createFirstActivity(activity, currentUser.getId());
+				} catch (ThereIsNoStartException | InvalidActivityInputException | CreateFirstActivityException e) {
 					// TODO Auto-generated catch block
 //					e.printStackTrace();
 					Map<String, String> responseBody = new HashMap<>();
 					responseBody.put("error", e.getMessage());
-
 					return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
 
 				}
 
 			} else {
 				try {
-					activityService.createFirstActivity(activity);
-				} catch (ThereIsNoStartException | InvalidActivityInputException e) {
+					String dateTimeString = createActivityDto.activityStartsTime().get(0);
+					
+					LocalDateTime startingTime = TimeParser.parseStringToLocalDateTime(dateTimeString);
+					activity.addStart(startingTime);
+					activityService.createFirstActivity(activity, currentUser.getId());
+				} catch (ThereIsNoStartException | InvalidActivityInputException | CreateFirstActivityException e) {
 					// TODO Auto-generated catch block
 //					e.printStackTrace();
 					Map<String, String> responseBody = new HashMap<>();
@@ -84,7 +88,7 @@ public class ActivityController {
 		}
 
 		Map<String, String> responseBody = new HashMap<>();
-		responseBody.put("error", activity.getName());
+		responseBody.put("Activity created:", activity.getName());
 //		activityService.createFirstActivity(createActivityDto);
 		return new ResponseEntity<>(responseBody, HttpStatus.CREATED);
 	}
